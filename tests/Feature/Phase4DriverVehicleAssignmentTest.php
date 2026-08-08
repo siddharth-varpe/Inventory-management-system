@@ -354,8 +354,7 @@ class Phase4DriverVehicleAssignmentTest extends TestCase
         $response = $this->actingAs($this->user)->get('/transport/delivery-orders?queue=ready_for_assignment');
 
         $response->assertStatus(200);
-        $response->assertSee('Delivery Orders Command Center');
-        $response->assertSee('Queue 2: Ready for Assignment');
+        $response->assertSee('Delivery Orders');
         $response->assertSee($task->order_reference);
     }
 

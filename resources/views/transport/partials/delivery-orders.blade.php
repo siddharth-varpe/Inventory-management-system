@@ -1,281 +1,371 @@
-<div class="card border-translucent shadow-sm rounded-4 bg-body mb-4">
-    <!-- Header with Sub-Tab Nav Queues -->
-    <div class="card-header border-bottom border-translucent bg-body-tertiary p-4 rounded-top-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h4 class="fw-black text-body mb-1">🚚 Delivery Orders Command Center</h4>
-                <p class="text-muted small mb-0">Synchronized Sales Orders from CRM & Organize Stock Warehouse Fulfillment</p>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-bold">
-                    Total Synced Orders: {{ $requests->total() }}
-                </span>
-            </div>
+<div class="col-12">
+    <!-- MAIN PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+        <div>
+            <h3 class="fw-black text-body mb-0">Delivery Orders</h3>
+            <p class="text-muted small mb-0 mt-1">Synchronized Sales Orders from CRM & Organize Stock</p>
         </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-bold font-monospace">
+                Total Orders: {{ $statusCounts['all'] ?? $requests->total() }}
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3 fw-bold d-flex align-items-center gap-1.5" onclick="refreshDeliveryOrders()">
+                🔄 Refresh
+            </button>
+        </div>
+    </div>
 
-        <!-- Sub-Tab Queue Filters (Phase 3 & Phase 4 Queues) -->
-        <div class="nav nav-pills mt-4 border-bottom border-translucent pb-3 gap-2 flex-wrap">
-            @php $currentQueue = request('queue', 'all'); @endphp
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'all', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'all' ? 'active bg-primary' : 'bg-body-secondary text-body' }}">
-                All Synced Orders
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'awaiting_warehouse', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'awaiting_warehouse' ? 'active bg-warning text-dark' : 'bg-body-secondary text-body' }}">
-                ⏳ Queue 1: Awaiting Warehouse
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'ready_for_assignment', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'ready_for_assignment' ? 'active bg-success' : 'bg-body-secondary text-body' }}">
-                ✅ Queue 2: Ready for Assignment
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'driver_vehicle_assigned', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'driver_vehicle_assigned' ? 'active bg-info text-white' : 'bg-body-secondary text-body' }}">
-                🚛 Queue 3: Driver & Vehicle Assigned
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'in_transit', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'in_transit' ? 'active bg-primary' : 'bg-body-secondary text-body' }}">
-                🚀 Queue 4: Active / In Transit
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'completed', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'completed' ? 'active bg-secondary' : 'bg-body-secondary text-body' }}">
-                🎉 Queue 5: Completed
-            </a>
-            <a href="{{ route('transport.index', array_merge(request()->except(['page']), ['queue' => 'cancelled', 'tab' => 'delivery_orders'])) }}" 
-               class="nav-link rounded-pill px-3 py-1.5 small fw-bold {{ $currentQueue === 'cancelled' ? 'active bg-danger text-white' : 'bg-body-secondary text-body' }}">
-                🚫 Queue 6: Cancelled
+    <!-- STATUS SUMMARY FILTER CARDS (LAYOUT B) -->
+    <div class="row g-3 mb-4">
+        @php
+            $currentStatusCard = request('status_card', 'all');
+        @endphp
+        <!-- ALL -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'all'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'all' ? 'border-primary bg-primary-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ALL</div>
+                <div class="fs-4 fw-black text-primary font-monospace">{{ $statusCounts['all'] ?? 0 }}</div>
             </a>
         </div>
 
-        <!-- Filter Controls Bar -->
-        <form method="GET" action="{{ route('transport.index') }}" class="row g-3 mt-2 align-items-center">
-            <input type="hidden" name="tab" value="delivery_orders">
-            <input type="hidden" name="queue" value="{{ $currentQueue }}">
+        <!-- READY -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'ready'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'ready' ? 'border-success bg-success-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">READY</div>
+                <div class="fs-4 fw-black text-success font-monospace">{{ $statusCounts['ready'] ?? 0 }}</div>
+            </a>
+        </div>
 
-            <div class="col-md-4">
+        <!-- ASSIGNED -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'assigned'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'assigned' ? 'border-purple bg-purple-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ASSIGNED</div>
+                <div class="fs-4 fw-black text-purple font-monospace" style="color: #9333ea;">{{ $statusCounts['assigned'] ?? 0 }}</div>
+            </a>
+        </div>
+
+        <!-- ACTIVE -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'active'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'active' ? 'border-warning bg-warning-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ACTIVE</div>
+                <div class="fs-4 fw-black text-warning font-monospace">{{ $statusCounts['active'] ?? 0 }}</div>
+            </a>
+        </div>
+
+        <!-- COMPLETED -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'completed'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'completed' ? 'border-info bg-info-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">COMPLETED</div>
+                <div class="fs-4 fw-black text-info font-monospace">{{ $statusCounts['completed'] ?? 0 }}</div>
+            </a>
+        </div>
+
+        <!-- CANCELLED -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'cancelled'])) }}" 
+               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'cancelled' ? 'border-danger bg-danger-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">CANCELLED</div>
+                <div class="fs-4 fw-black text-danger font-monospace">{{ $statusCounts['cancelled'] ?? 0 }}</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- SEARCH & FILTER ROW -->
+    <div class="card p-3 rounded-4 shadow-sm border-translucent bg-body mb-4">
+        <form method="GET" action="{{ route('transport.index') }}" id="deliveryFilterForm" class="row g-2 align-items-center">
+            <input type="hidden" name="tab" value="delivery-orders">
+            @if(request('status_card'))
+                <input type="hidden" name="status_card" value="{{ request('status_card') }}">
+            @endif
+
+            <!-- Search Field -->
+            <div class="col-md-5">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-body-secondary border-translucent"><i class="fas me-1">🔍</i></span>
+                    <span class="input-group-text bg-body border-translucent text-muted">🔍</span>
                     <input type="text" name="search" class="form-control bg-body border-translucent" 
-                           placeholder="Search Order ID, Customer, City..." value="{{ request('search') }}">
+                           placeholder="Search Order ID, Customer, City..." 
+                           value="{{ request('search') }}">
                 </div>
             </div>
 
+            <!-- Priority Dropdown -->
             <div class="col-md-3">
-                <select name="priority" class="form-select form-select-sm bg-body border-translucent">
-                    <option value="">-- Priority (All) --</option>
-                    <option value="urgent" {{ request('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option>
-                    <option value="high" {{ request('priority') === 'high' ? 'selected' : '' }}>High</option>
-                    <option value="normal" {{ request('priority') === 'normal' ? 'selected' : '' }}>Normal</option>
-                    <option value="low" {{ request('priority') === 'low' ? 'selected' : '' }}>Low</option>
+                <select name="priority" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
+                    <option value="all">All Priorities</option>
+                    <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>🚨 Urgent Priority</option>
+                    <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>🔥 High Priority</option>
+                    <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>📦 Normal Priority</option>
                 </select>
             </div>
 
-            <div class="col-md-3">
-                <select name="city" class="form-select form-select-sm bg-body border-translucent">
-                    <option value="">-- City (All) --</option>
-                    @foreach($availableCities ?? [] as $c)
-                        <option value="{{ $c }}" {{ request('city') === $c ? 'selected' : '' }}>{{ $c }}</option>
+            <!-- City Dropdown -->
+            <div class="col-md-2">
+                <select name="city" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
+                    <option value="all">All Cities</option>
+                    @foreach($availableCities as $c)
+                        <option value="{{ $c }}" {{ request('city') == $c ? 'selected' : '' }}>📍 {{ $c }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="col-md-2 d-flex gap-2">
+            <!-- Action Buttons -->
+            <div class="col-md-2 d-flex gap-1.5 justify-content-end">
                 <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold rounded-3">Filter</button>
-                <a href="{{ route('transport.index', ['tab' => 'delivery_orders']) }}" class="btn btn-sm btn-outline-secondary rounded-3">Reset</a>
+                @if(request('search') || request('priority') || request('city') || request('status_card'))
+                    <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm btn-outline-secondary rounded-3" title="Reset Filters">Reset</a>
+                @endif
             </div>
         </form>
     </div>
 
-    <!-- Data Table -->
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 border-translucent">
-                <thead class="bg-body-tertiary text-muted small text-uppercase font-monospace border-bottom border-translucent">
-                    <tr>
-                        <th class="ps-4">Enterprise Order ID</th>
-                        <th>Customer Name</th>
-                        <th>Destination</th>
-                        <th>Priority</th>
-                        <th>Warehouse Readiness</th>
-                        <th>Transport Status</th>
-                        <th>Assignment Info</th>
-                        <th class="text-end pe-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($requests as $req)
-                        <tr>
-                            <!-- Order ID -->
-                            <td class="ps-4">
-                                <div class="fw-bold font-monospace text-primary mb-0">{{ $req->order_reference }}</div>
-                                <span class="small text-muted font-monospace" style="font-size: 0.75rem;">Task: {{ $req->request_number }}</span>
-                            </td>
+    <!-- LOADING SKELETON CONTAINER (HIDDEN BY DEFAULT) -->
+    <div id="deliveryCardsSkeleton" class="vstack gap-3 d-none mb-4">
+        @for($i = 0; $i < 3; $i++)
+            <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body placeholder-glow">
+                <div class="d-flex justify-content-between pb-3 border-bottom border-translucent">
+                    <div>
+                        <span class="placeholder col-4 rounded-3 py-2 mb-2"></span>
+                        <span class="placeholder col-6 rounded-3 py-1"></span>
+                    </div>
+                    <span class="placeholder col-3 rounded-3 py-2"></span>
+                </div>
+                <div class="pt-3 d-flex justify-content-between">
+                    <span class="placeholder col-8 rounded-3 py-2"></span>
+                    <span class="placeholder col-2 rounded-3 py-2"></span>
+                </div>
+            </div>
+        @endfor
+    </div>
 
-                            <!-- Customer -->
-                            <td>
-                                <div class="fw-bold text-body small">{{ $req->customer_name }}</div>
-                                <div class="small text-muted">{{ $req->phone_number ?? 'No Phone' }}</div>
-                            </td>
-
-                            <!-- Destination -->
-                            <td>
-                                <div class="small fw-bold text-body">{{ $req->city }}</div>
-                                <div class="small text-muted text-truncate" style="max-width: 180px;" title="{{ $req->delivery_address }}">
-                                    {{ $req->delivery_address }}
-                                </div>
-                            </td>
-
-                            <!-- Priority -->
-                            <td>
-                                <span class="badge rounded-pill px-2.5 py-1 {{ $req->priority_badge_class }}">
-                                    {{ strtoupper($req->priority ?? 'NORMAL') }}
+    <!-- DELIVERY CARDS CONTAINER (LAYOUT B CORE STRUCTURE) -->
+    <div id="deliveryCardsContainer" class="vstack gap-3">
+        @forelse($requests as $r)
+            <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
+                <!-- CARD HEADER: ORDER ID, STATUS, CUSTOMER, DESTINATION -->
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="fs-5">🚚</span>
+                            <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-black text-primary text-decoration-none fs-5 font-monospace">
+                                {{ $r->order_reference }}
+                            </a>
+                            <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small">
+                                {{ strtoupper($r->priority ?? 'NORMAL') }}
+                            </span>
+                            <span class="badge rounded-pill {{ $r->status_badge_class }} px-2.5 py-1 small">
+                                {{ $r->status_label }}
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="small text-muted font-monospace" style="font-size: 0.78rem;">Task ID: {{ $r->request_number }}</span>
+                            <!-- WAREHOUSE FULFILLMENT BADGE -->
+                            @if(!empty($r->warehouse_completed_at) || $r->warehouse_status === 'completed')
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" style="font-size: 0.75rem;">
+                                    ✓ Seal & Ready to Dispatch {{ $r->warehouse_completed_at ? '('.$r->warehouse_completed_at->format('d M Y, H:i').')' : '' }}
                                 </span>
-                            </td>
-
-                            <!-- Warehouse Readiness -->
-                            <td>
-                                <span class="badge rounded-pill px-2.5 py-1 {{ $req->warehouse_status_badge_class }}">
-                                    {{ $req->warehouse_status_label }}
+                            @elseif($r->status === 'awaiting_warehouse')
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small" style="font-size: 0.75rem;">
+                                    ⏳ Awaiting Warehouse Pick & Pack
                                 </span>
-                                @if($req->warehouse_completed_at)
-                                    <div class="small text-muted mt-1 font-monospace" style="font-size: 0.7rem;">
-                                        Sealed: {{ $req->warehouse_completed_at->format('H:i, d M') }}
-                                    </div>
-                                @endif
-                            </td>
-
-                            <!-- Transport Status -->
-                            <td>
-                                <span class="badge rounded-pill px-3 py-1.5 fs-7 {{ $req->status_badge_class }}">
-                                    {{ $req->status_label }}
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill small" style="font-size: 0.75rem;">
+                                    📦 Warehouse In Progress
                                 </span>
-                            </td>
+                            @endif
+                        </div>
+                    </div>
 
-                            <!-- Assignment Info -->
-                            <td>
-                                @if($req->driver || $req->vehicle)
-                                    <div class="small fw-bold text-body">👤 {{ $req->driver_name ?? $req->driver?->driver_name ?? 'Driver' }}</div>
-                                    <div class="small text-muted">🚛 {{ $req->vehicle_number ?? $req->vehicle?->vehicle_number ?? 'Vehicle' }}</div>
-                                @else
-                                    <span class="small text-muted italic">Unassigned</span>
+                    <!-- CUSTOMER & DESTINATION -->
+                    <div class="text-md-end">
+                        <div class="fw-bold text-body fs-6">{{ $r->customer_name }}</div>
+                        <div class="small text-muted">📍 {{ $r->city }} — <span class="text-truncate d-inline-block align-bottom" style="max-width: 250px;">{{ $r->delivery_address }}</span></div>
+                    </div>
+                </div>
+
+                <!-- CARD FOOTER: DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS -->
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-3">
+                    <div class="row g-3 flex-grow-1 align-items-center">
+                        <!-- ASSIGNED DRIVER -->
+                        <div class="col-6 col-md-4">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>
+                            @if($r->driver)
+                                <div class="fw-bold text-body small">👤 {{ $r->driver->driver_name }}</div>
+                                <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
+                            @else
+                                <div class="text-muted small fst-italic">Not Assigned</div>
+                            @endif
+                        </div>
+
+                        <!-- ASSIGNED VEHICLE -->
+                        <div class="col-6 col-md-4">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Assigned Vehicle</div>
+                            @if($r->vehicle)
+                                <div class="fw-bold text-body font-monospace small">🚛 {{ $r->vehicle->vehicle_number }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
+                            @else
+                                <div class="text-muted small fst-italic">Not Assigned</div>
+                            @endif
+                        </div>
+
+                        <!-- EXPECTED DELIVERY -->
+                        <div class="col-12 col-md-4">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Expected Delivery</div>
+                            <div class="fw-semibold text-body small font-monospace">
+                                {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTON & THREE-DOT DROPDOWN MENU -->
+                    <div class="d-flex align-items-center gap-2 ms-md-auto">
+                        <button type="button" class="btn btn-sm btn-primary px-3.5 fw-bold rounded-3 shadow-sm" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                            @if(in_array($r->status, ['ready_for_assignment', 'waiting_planning', 'awaiting_warehouse']))
+                                View / Assign
+                            @elseif(in_array($r->status, ['driver_vehicle_assigned', 'assigned']))
+                                View Assignment
+                            @elseif(in_array($r->status, ['dispatched', 'in_transit']))
+                                View Delivery
+                            @else
+                                View Profile
+                            @endif
+                        </button>
+
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary rounded-3 px-2.5" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                                ⋮
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-translucent">
+                                <li>
+                                    <a class="dropdown-item small" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                                        📄 View Profile
+                                    </a>
+                                </li>
+                                @if(!in_array($r->status, ['dispatched', 'in_transit', 'delivered', 'completed', 'cancelled']))
+                                    <li>
+                                        <a class="dropdown-item small" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                                            👤 Assign Driver & Vehicle
+                                        </a>
+                                    </li>
                                 @endif
-                            </td>
-
-                            <!-- Actions -->
-                            <td class="text-end pe-4">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"
-                                        onclick="openDeliveryOrderProfile({{ $req->id }})">
-                                    👁 View Profile / Assign
-                                </button>
-
-                                @if($req->status === 'awaiting_warehouse')
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 ms-1" style="font-size: 0.65rem;" title="Resource assignment locked until warehouse completes Pick & Pack">
-                                        🔒 Locked
-                                    </span>
+                                @if(in_array($r->status, ['driver_vehicle_assigned', 'assigned', 'ready_for_dispatch']))
+                                    <li>
+                                        <a class="dropdown-item small text-success fw-bold" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                                            🚀 Confirm Dispatch
+                                        </a>
+                                    </li>
                                 @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-5">
-                                <div class="fs-2 mb-2">📦</div>
-                                <h6 class="fw-bold">No Delivery Orders Found</h6>
-                                <p class="small text-muted mb-0">Orders will automatically populate here when created in CRM Sales Orders.</p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                                @if(in_array($r->status, ['dispatched', 'in_transit']))
+                                    <li>
+                                        <a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="openCancelDispatchModal({{ $r->id }}, '{{ $r->order_reference }}', '{{ $r->dispatch_number }}')">
+                                            🚫 Cancel Dispatch
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <!-- EMPTY STATE CARD -->
+            <div class="card p-5 rounded-4 border-translucent bg-body text-center">
+                <div class="fs-1 mb-2">📦</div>
+                <h5 class="fw-bold text-body mb-1">No delivery orders found</h5>
+                <p class="text-muted small mb-3">Orders synchronized from CRM and Warehouse will appear here.</p>
+                @if(request('search') || request('priority') || request('city') || request('status_card'))
+                    <div>
+                        <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm btn-outline-primary px-4 rounded-3 fw-bold">
+                            Reset Filters
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endforelse
+    </div>
 
-        <!-- Server-Side Pagination Links -->
-        <div class="mt-4 d-flex justify-content-between align-items-center p-4">
-            <div class="small text-muted">
-                Showing {{ $requests->firstItem() ?? 0 }} to {{ $requests->lastItem() ?? 0 }} of {{ $requests->total() }} delivery orders
+    <!-- SERVER-SIDE PAGINATION -->
+    @if($requests->hasPages())
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4">
+            <div class="text-muted small font-monospace">
+                Showing {{ $requests->firstItem() }}–{{ $requests->lastItem() }} of {{ $requests->total() }} delivery orders
             </div>
             <div>
                 {{ $requests->appends(request()->query())->links() }}
             </div>
         </div>
-    </div>
+    @endif
 </div>
 
 <!-- ========================================================================= -->
-<!-- DEDICATED DELIVERY ORDER PROFILE & ASSIGNMENT MODAL (#modalDeliveryOrderProfile) -->
+<!-- DEDICATED DELIVERY ORDER PROFILE & ASSIGNMENT MODAL -->
 <!-- ========================================================================= -->
 <div class="modal fade" id="modalDeliveryOrderProfile" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content rounded-4 shadow-lg border-translucent bg-body">
-            <div class="modal-header border-bottom border-translucent p-4">
+            <div class="modal-header border-bottom border-translucent p-3 bg-body-tertiary rounded-top-4">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-primary font-monospace fs-5 px-3 py-1.5 rounded-pill" id="profOrderRef">SO-2026-000000</span>
+                    <span class="fs-4">📦</span>
                     <div>
-                        <h5 class="modal-title fw-black text-body mb-0" id="profCustomerName">Customer Order Profile</h5>
-                        <span class="small text-muted" id="profRequestNumber">Transport Task ID: TRN-2026-000000</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title fw-black text-body mb-0" id="profOrderReference">SO-2026-000001</h5>
+                            <span class="badge bg-primary font-monospace px-2.5 py-1" id="profRequestNumber">TRN-000001</span>
+                            <span class="badge rounded-pill" id="profPriorityBadge">NORMAL</span>
+                        </div>
+                        <div class="small text-muted" id="profCustomerName">Customer Company Name</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-4">
-                <!-- Status & Priority Banner -->
+                <!-- Order Overview Section -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent">
-                            <div class="small text-muted mb-1">Warehouse Readiness Status</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge rounded-pill px-3 py-1.5 fs-6" id="profWarehouseBadge">Picking & Packing</span>
-                                <span class="small text-muted" id="profWarehouseTime">Pending</span>
-                            </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent h-100">
+                            <span class="text-muted small d-block">Destination City</span>
+                            <strong class="text-body fs-6" id="profCity">Mumbai</strong>
+                            <div class="small text-muted mt-1" id="profAddress">123 Street Address</div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent">
-                            <div class="small text-muted mb-1">Transport Department Status</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge rounded-pill px-3 py-1.5 fs-6" id="profTransportBadge">Awaiting Warehouse</span>
-                                <span class="badge rounded-pill px-2.5 py-1" id="profPriorityBadge">NORMAL</span>
-                            </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent h-100">
+                            <span class="text-muted small d-block">Package & Weight</span>
+                            <strong class="text-body fs-6" id="profPackages">5 Cartons</strong>
+                            <div class="small text-muted mt-1" id="profWeight">120.0 kg | 1.5 m³</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent h-100">
+                            <span class="text-muted small d-block">Expected Delivery</span>
+                            <strong class="text-body fs-6" id="profExpectedDate">10 Aug 2026</strong>
+                            <div class="small text-muted mt-1" id="profSourceModule">CRM Sales Order</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-body-tertiary rounded-3 border border-translucent h-100">
+                            <span class="text-muted small d-block">Warehouse Fulfillment</span>
+                            <span class="badge rounded-pill mt-1" id="profWarehouseBadge">Completed</span>
+                            <div class="small text-muted mt-1" id="profWarehouseTime">H:i, d M Y</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Delivery Details Grid -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <div class="p-3 bg-body rounded-3 border border-translucent h-100">
-                            <h6 class="fw-bold text-body mb-3 border-bottom pb-2">📍 Destination & Contact Info</h6>
-                            <div class="small mb-2"><strong>Customer:</strong> <span id="profCustomer">N/A</span></div>
-                            <div class="small mb-2"><strong>Delivery Address:</strong> <span id="profAddress">N/A</span></div>
-                            <div class="small mb-2"><strong>Destination City:</strong> <span id="profCity">N/A</span></div>
-                            <div class="small mb-0"><strong>Contact Phone:</strong> <span id="profPhone">N/A</span></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-body rounded-3 border border-translucent h-100">
-                            <h6 class="fw-bold text-body mb-3 border-bottom pb-2">📦 Package & Delivery Requirements</h6>
-                            <div class="small mb-2"><strong>Required Delivery Date:</strong> <span id="profReqDate">N/A</span></div>
-                            <div class="small mb-2"><strong>Package Count:</strong> <span id="profPkgCount">1 Cartons</span></div>
-                            <div class="small mb-2"><strong>Total Weight:</strong> <span id="profWeight">2.50 kg</span></div>
-                            <div class="small mb-0"><strong>Source Module:</strong> <span id="profSource">CRM Sales Order</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ============================================================= -->
-                <!-- PHASE 4 INTERACTIVE DRIVER & VEHICLE ASSIGNMENT SECTION -->
-                <!-- ============================================================= -->
+                <!-- Assignment Card Section -->
                 <div class="card border-translucent rounded-3 mb-4 bg-body-tertiary" id="profAssignmentCard">
-                    <div class="card-header bg-transparent border-bottom border-translucent d-flex align-items-center justify-content-between p-3">
-                        <h6 class="fw-bold text-body mb-0">🚚 Fleet Resource Assignment</h6>
+                    <div class="card-header bg-body border-bottom border-translucent d-flex align-items-center justify-content-between p-3">
+                        <h6 class="fw-bold text-body mb-0">👨‍✈️ Driver & Vehicle Resource Assignment</h6>
                         <span class="badge rounded-pill font-monospace px-2.5 py-1" id="profAssignmentStatusBadge">READY FOR ASSIGNMENT</span>
                     </div>
                     <div class="card-body p-3">
-                        <!-- Alert Box for Lock/Errors -->
                         <div class="alert alert-warning border-warning-subtle small mb-3 d-none" id="profAssignmentLockAlert">
                             🔒 <strong>Assignment Locked:</strong> <span id="profLockReason">Resource assignment locked until Organize Stock completes Pick & Pack.</span>
                         </div>
 
-                        <!-- Active Assignment Display (When Already Assigned) -->
                         <div id="profActiveAssignmentContainer" class="d-none">
                             <div class="p-3 bg-body rounded-3 border border-translucent mb-3">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -303,18 +393,15 @@
                                 </div>
                             </div>
 
-                            <!-- Reassign Action Trigger -->
                             <button type="button" class="btn btn-sm btn-outline-warning w-100 fw-bold rounded-3" onclick="toggleReassignForm()">
                                 🔄 Reassign Driver / Vehicle
                             </button>
                         </div>
 
-                        <!-- Assign / Reassign Interactive Form -->
                         <form id="profAssignmentForm" onsubmit="submitAssignmentForm(event)" class="mt-2">
                             <input type="hidden" id="profTaskId" name="task_id" value="">
                             <input type="hidden" id="profIsReassign" value="0">
 
-                            <!-- Reassign Reason Field (Hidden by default) -->
                             <div class="mb-3 d-none" id="profReassignReasonGroup">
                                 <label class="form-label small fw-bold text-warning">Reassignment Reason <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm bg-body border-translucent" 
@@ -322,7 +409,6 @@
                             </div>
 
                             <div class="row g-3">
-                                <!-- Driver Selection -->
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-body">Select Eligible Driver <span class="text-danger">*</span></label>
                                     <select class="form-select form-select-sm bg-body border-translucent" id="profSelectDriver" required>
@@ -331,7 +417,6 @@
                                     <div class="form-text small text-muted" id="profDriverHelp">Only active, available drivers with valid licenses are displayed.</div>
                                 </div>
 
-                                <!-- Vehicle Selection -->
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-body">Select Eligible Vehicle <span class="text-danger">*</span></label>
                                     <select class="form-select form-select-sm bg-body border-translucent" id="profSelectVehicle" onchange="validateVehicleCapacity()" required>
@@ -341,7 +426,6 @@
                                 </div>
                             </div>
 
-                            <!-- Live Capacity Indicator & Warning -->
                             <div class="alert alert-danger border-danger-subtle small mt-3 mb-0 d-none" id="profCapacityWarning">
                                 🚫 <strong>Capacity Validation Failed:</strong> Selected vehicle does not have sufficient capacity for this order.
                             </div>
@@ -355,26 +439,21 @@
                     </div>
                 </div>
 
-                <!-- ============================================================= -->
-                <!-- PHASE 5 OPERATIONAL DISPATCH ACTION SECTION -->
-                <!-- ============================================================= -->
+                <!-- PHASE 5 DISPATCH ACTION SECTION -->
                 <div class="card border-primary-subtle rounded-3 mb-4 bg-body-tertiary d-none" id="profDispatchCard">
                     <div class="card-header bg-primary-subtle border-bottom border-primary-subtle d-flex align-items-center justify-content-between p-3">
                         <h6 class="fw-bold text-primary mb-0">🚀 Operational Dispatch Control</h6>
                         <span class="badge bg-primary text-white font-monospace px-2.5 py-1" id="profDispatchBadge">READY FOR DISPATCH</span>
                     </div>
                     <div class="card-body p-3">
-                        <!-- Dispatch Ineligibility Reason Alert -->
                         <div class="alert alert-warning border-warning-subtle small mb-3 d-none" id="profDispatchBlockedAlert">
                             ⚠️ <strong>Dispatch Unavailable:</strong> <span id="profDispatchBlockedReason">Warehouse fulfillment or resource assignment incomplete.</span>
                         </div>
 
-                        <!-- Dispatch Dispatched Banner (When Dispatched) -->
                         <div class="alert alert-success border-success-subtle small mb-0 d-none" id="profDispatchedBanner">
                             🚀 <strong>Shipment Dispatched:</strong> Released under Dispatch ID <strong id="profDispatchedNumber">DSP-2026-000001</strong> on <span id="profDispatchedTime">N/A</span>.
                         </div>
 
-                        <!-- Confirm Dispatch Action Button -->
                         <div class="text-end d-none" id="profDispatchActionGroup">
                             <button type="button" class="btn btn-success px-4 fw-bold rounded-3 shadow-sm" id="profTriggerDispatchBtn" onclick="openDispatchConfirmModal()">
                                 🚀 Confirm Dispatch
@@ -383,7 +462,7 @@
                     </div>
                 </div>
 
-                <!-- Universal Real Event Transport Timeline -->
+                <!-- Real-Event Timeline -->
                 <div class="p-3 bg-body rounded-3 border border-translucent">
                     <h6 class="fw-bold text-body mb-3 border-bottom pb-2">📜 Real-Event Transport Timeline</h6>
                     <div class="timeline-container ps-3" id="profTimeline">
@@ -399,7 +478,7 @@
     </div>
 </div>
 
-<!-- DEDICATED DISPATCH CONFIRMATION MODAL (#modalConfirmDispatch) -->
+<!-- DISPATCH CONFIRMATION MODAL (#modalConfirmDispatch) -->
 <div class="modal fade" id="modalConfirmDispatch" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 shadow-lg border-translucent bg-body">
@@ -436,69 +515,58 @@
 <script>
 let currentOrderData = null;
 
+function refreshDeliveryOrders() {
+    window.location.reload();
+}
+
 function openDeliveryOrderProfile(id) {
-    fetch(`/transport/delivery-orders/${id}`)
+    fetch(`/transport/delivery-orders/${id}`, {
+        headers: { 'Accept': 'application/json' }
+    })
         .then(response => response.json())
         .then(data => {
-            if (!data || !data.id) {
-                alert('Delivery order profile could not be loaded.');
-                return;
-            }
-
             currentOrderData = data;
 
             document.getElementById('profTaskId').value = data.id;
-            document.getElementById('profOrderRef').textContent = data.order_reference;
+            document.getElementById('profIsReassign').value = '0';
+            document.getElementById('profOrderReference').textContent = data.order_reference;
+            document.getElementById('profRequestNumber').textContent = data.request_number;
             document.getElementById('profCustomerName').textContent = data.customer_name;
-            document.getElementById('profRequestNumber').textContent = 'Transport Task ID: ' + data.request_number;
+            document.getElementById('profCity').textContent = data.delivery_city;
+            document.getElementById('profAddress').textContent = data.delivery_address || 'No specific address provided';
+            document.getElementById('profPackages').textContent = (data.package_count || 1) + ' Cartons';
+            document.getElementById('profWeight').textContent = `${data.weight_kg} kg | ${data.volume_m3} m³`;
+            document.getElementById('profExpectedDate').textContent = data.expected_delivery_date || 'N/A';
+            document.getElementById('profSourceModule').textContent = data.source_module;
 
-            document.getElementById('profCustomer').textContent = data.customer_name;
-            document.getElementById('profAddress').textContent = data.delivery_address || 'Primary Customer Address';
-            document.getElementById('profCity').textContent = data.delivery_city || 'Mumbai';
-            document.getElementById('profPhone').textContent = data.phone_number || 'N/A';
+            const priorityBadge = document.getElementById('profPriorityBadge');
+            priorityBadge.className = `badge rounded-pill ${data.priority_badge_class}`;
+            priorityBadge.textContent = (data.priority || 'normal').toUpperCase();
 
-            document.getElementById('profReqDate').textContent = data.expected_delivery_date || 'N/A';
-            document.getElementById('profPkgCount').textContent = (data.package_count || 1) + ' Carton(s)';
-            document.getElementById('profWeight').textContent = (data.weight_kg || '2.50') + ' kg';
-            document.getElementById('profSource').textContent = data.source_module || 'CRM Sales Order';
+            const warehouseBadge = document.getElementById('profWarehouseBadge');
+            warehouseBadge.className = `badge rounded-pill ${data.warehouse_status_badge_class}`;
+            warehouseBadge.textContent = data.warehouse_status_label;
+            document.getElementById('profWarehouseTime').textContent = data.warehouse_completed_at ? `Completed: ${data.warehouse_completed_at}` : 'Fulfillment In Progress';
 
-            // Badges
-            const wBadge = document.getElementById('profWarehouseBadge');
-            wBadge.textContent = data.warehouse_status_label;
-            wBadge.className = 'badge rounded-pill px-3 py-1.5 fs-6 ' + data.warehouse_status_badge_class;
+            const assignStatusBadge = document.getElementById('profAssignmentStatusBadge');
+            assignStatusBadge.className = `badge rounded-pill font-monospace ${data.status_badge_class}`;
+            assignStatusBadge.textContent = data.status_label;
 
-            document.getElementById('profWarehouseTime').textContent = data.warehouse_completed_at ? 'Sealed: ' + data.warehouse_completed_at : 'In Progress';
-
-            const tBadge = document.getElementById('profTransportBadge');
-            tBadge.textContent = data.status_label;
-            tBadge.className = 'badge rounded-pill px-3 py-1.5 fs-6 ' + data.status_badge_class;
-
-            const pBadge = document.getElementById('profPriorityBadge');
-            pBadge.textContent = (data.priority || 'NORMAL').toUpperCase();
-            pBadge.className = 'badge rounded-pill px-2.5 py-1 ' + data.priority_badge_class;
-
-            // Phase 4 Assignment Section Rendering Logic
             const lockAlert = document.getElementById('profAssignmentLockAlert');
-            const activeContainer = document.getElementById('profActiveAssignmentContainer');
             const assignForm = document.getElementById('profAssignmentForm');
+            const activeContainer = document.getElementById('profActiveAssignmentContainer');
             const reassignReasonGroup = document.getElementById('profReassignReasonGroup');
-            const capacityWarning = document.getElementById('profCapacityWarning');
             const submitBtn = document.getElementById('profSubmitAssignBtn');
-            const statusBadge = document.getElementById('profAssignmentStatusBadge');
 
             lockAlert.classList.add('d-none');
             activeContainer.classList.add('d-none');
             assignForm.classList.remove('d-none');
             reassignReasonGroup.classList.add('d-none');
-            capacityWarning.classList.add('d-none');
-            document.getElementById('profIsReassign').value = '0';
-            submitBtn.disabled = false;
+            document.getElementById('profReassignReason').required = false;
+
             submitBtn.textContent = 'Confirm Assignment';
+            submitBtn.className = 'btn btn-sm btn-primary px-4 fw-bold rounded-3';
 
-            statusBadge.textContent = (data.status_label || 'READY FOR ASSIGNMENT').toUpperCase();
-            statusBadge.className = 'badge rounded-pill font-monospace px-2.5 py-1 ' + data.status_badge_class;
-
-            // Populate Driver Dropdown
             const driverSelect = document.getElementById('profSelectDriver');
             driverSelect.innerHTML = '<option value="">-- Choose Eligible Driver --</option>';
             if (data.eligible_drivers && data.eligible_drivers.length > 0) {
@@ -510,7 +578,6 @@ function openDeliveryOrderProfile(id) {
                 });
             }
 
-            // Populate Vehicle Dropdown
             const vehicleSelect = document.getElementById('profSelectVehicle');
             vehicleSelect.innerHTML = '<option value="">-- Choose Eligible Vehicle --</option>';
             if (data.eligible_vehicles && data.eligible_vehicles.length > 0) {
@@ -533,7 +600,7 @@ function openDeliveryOrderProfile(id) {
                 document.getElementById('profLockReason').textContent = 'Order is cancelled. Resource assignment is unavailable.';
             } else if (data.active_assignment) {
                 activeContainer.classList.remove('d-none');
-                assignForm.classList.add('d-none'); // Hide initial form, toggleable via reassign
+                assignForm.classList.add('d-none');
 
                 document.getElementById('profAssignmentNumber').textContent = data.active_assignment.assignment_number;
                 document.getElementById('profAssignedTime').textContent = 'Assigned: ' + data.active_assignment.assigned_at;
@@ -544,7 +611,6 @@ function openDeliveryOrderProfile(id) {
                 document.getElementById('profAssignedByName').textContent = data.active_assignment.assigned_by_name || 'Transport Manager';
             }
 
-            // Phase 5 Dispatch Control Rendering
             const dispatchCard = document.getElementById('profDispatchCard');
             const dispatchBlockedAlert = document.getElementById('profDispatchBlockedAlert');
             const dispatchedBanner = document.getElementById('profDispatchedBanner');
@@ -571,7 +637,6 @@ function openDeliveryOrderProfile(id) {
                 }
             }
 
-            // Render Timeline
             const timelineContainer = document.getElementById('profTimeline');
             timelineContainer.innerHTML = '';
 
@@ -647,7 +712,7 @@ function executeDispatchOrder() {
     })
     .catch(error => {
         console.error('Dispatch execution error:', error);
-        alert('Dispatch could not be completed. The order may have changed. Refresh the order and try again.');
+        alert('Dispatch could not be completed. Refresh the order and try again.');
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Confirm Dispatch';
     });
@@ -696,28 +761,30 @@ function submitAssignmentForm(event) {
     event.preventDefault();
 
     const taskId = document.getElementById('profTaskId').value;
-    const isReassign = document.getElementById('profIsReassign').value === '1';
     const driverId = document.getElementById('profSelectDriver').value;
     const vehicleId = document.getElementById('profSelectVehicle').value;
+    const isReassign = document.getElementById('profIsReassign').value === '1';
+    const reassignReason = document.getElementById('profReassignReason').value;
+
+    if (!driverId || !vehicleId) {
+        alert('Please select both an eligible driver and an eligible vehicle.');
+        return;
+    }
+
+    const endpoint = isReassign ? `/transport/delivery-orders/${taskId}/reassign` : `/transport/delivery-orders/${taskId}/assign`;
+    const payload = {
+        driver_id: driverId,
+        vehicle_id: vehicleId,
+        reassignment_reason: isReassign ? reassignReason : null,
+    };
+
+    const submitBtn = document.getElementById('profSubmitAssignBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing Assignment...';
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    let url = `/transport/delivery-orders/${taskId}/assign`;
-    let payload = {
-        driver_id: driverId,
-        vehicle_id: vehicleId,
-    };
-
-    if (isReassign) {
-        url = `/transport/delivery-orders/${taskId}/reassign`;
-        payload = {
-            new_driver_id: driverId,
-            new_vehicle_id: vehicleId,
-            reassignment_reason: document.getElementById('profReassignReason').value,
-        };
-    }
-
-    fetch(url, {
+    fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -732,12 +799,16 @@ function submitAssignmentForm(event) {
             alert(data.message);
             window.location.reload();
         } else {
-            alert('Assignment Failed: ' + (data.message || 'Validation Error'));
+            alert('Assignment Failed: ' + (data.message || 'Validation error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = isReassign ? 'Confirm Reassignment' : 'Confirm Assignment';
         }
     })
     .catch(error => {
-        console.error('Assignment request error:', error);
-        alert('An unexpected error occurred during assignment.');
+        console.error('Error submitting assignment:', error);
+        alert('Assignment failed. Please check inputs and try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = isReassign ? 'Confirm Reassignment' : 'Confirm Assignment';
     });
 }
 </script>

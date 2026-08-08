@@ -31,7 +31,7 @@
                         <span>📦</span> Delivery Orders
                     </span>
                     <span class="badge {{ $activeTab === 'delivery-orders' ? 'bg-white text-primary' : 'bg-body-tertiary text-muted' }} rounded-pill" style="font-size: 0.7rem;">
-                        {{ $requests->total() }}
+                        {{ $statusCounts['all'] ?? $requests->total() }}
                     </span>
                 </a>
 
@@ -62,8 +62,13 @@
                 <div class="text-muted font-monospace text-uppercase small px-2 mt-3 mb-1" style="font-size: 0.65rem; letter-spacing: 0.05em;">OPERATIONS</div>
 
                 <a href="{{ route('transport.index', ['tab' => 'active']) }}" 
-                   class="nav-link rounded-3 px-3 py-2 fw-bold d-flex align-items-center gap-2 {{ $activeTab === 'active' ? 'active bg-primary text-white shadow-sm' : 'text-body hover-bg-tertiary' }}">
-                    <span>🚛</span> Active Deliveries
+                   class="nav-link rounded-3 px-3 py-2 fw-bold d-flex align-items-center justify-content-between gap-2 {{ $activeTab === 'active' ? 'active bg-primary text-white shadow-sm' : 'text-body hover-bg-tertiary' }}">
+                    <span class="d-flex align-items-center gap-2">
+                        <span>🚛</span> Active Deliveries
+                    </span>
+                    <span class="badge {{ $activeTab === 'active' ? 'bg-white text-primary' : 'bg-body-tertiary text-muted' }} rounded-pill" style="font-size: 0.7rem;">
+                        {{ $statusCounts['active'] ?? 0 }}
+                    </span>
                 </a>
 
                 <a href="{{ route('transport.index', ['tab' => 'history']) }}" 
@@ -71,6 +76,33 @@
                     <span>📋</span> History
                 </a>
             </nav>
+
+            <!-- SIDEBAR WIDGET: TODAY AT A GLANCE -->
+            <div class="mt-4 pt-3 border-top border-translucent">
+                <div class="small fw-black text-muted text-uppercase font-monospace mb-2" style="font-size: 0.65rem; letter-spacing: 0.05em;">TODAY AT A GLANCE</div>
+                <div class="p-2 bg-body-tertiary rounded-3 border border-translucent">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 small">
+                        <span class="text-muted">Total Orders</span>
+                        <span class="fw-bold font-monospace text-body">{{ $statusCounts['all'] ?? 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 small">
+                        <span class="text-muted">Ready for Assignment</span>
+                        <span class="fw-bold font-monospace text-success">{{ $statusCounts['ready'] ?? 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 small">
+                        <span class="text-muted">Active Deliveries</span>
+                        <span class="fw-bold font-monospace text-warning">{{ $statusCounts['active'] ?? 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 small">
+                        <span class="text-muted">Completed</span>
+                        <span class="fw-bold font-monospace text-info">{{ $statusCounts['completed'] ?? 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span class="text-muted">Cancelled</span>
+                        <span class="fw-bold font-monospace text-danger">{{ $statusCounts['cancelled'] ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

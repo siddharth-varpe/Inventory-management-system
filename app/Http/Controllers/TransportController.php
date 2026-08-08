@@ -143,10 +143,21 @@ class TransportController extends Controller
 
         $queue = $request->get('queue');
 
+        $statusCard = $request->get('status_card');
+
         if ($activeTab === 'active') {
             $query->whereIn('status', ['dispatched', 'in_transit', 'out_for_delivery']);
         } elseif ($activeTab === 'history') {
             $query->whereIn('status', ['delivered', 'completed', 'returned_to_warehouse', 'cancelled', 'archived']);
+        } elseif ($activeTab === 'delivery-orders' && $statusCard && $statusCard !== 'all') {
+            match($statusCard) {
+                'ready' => $query->whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed']),
+                'assigned' => $query->whereIn('status', ['driver_vehicle_assigned', 'assigned']),
+                'active' => $query->whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery']),
+                'completed' => $query->whereIn('status', ['delivered', 'completed']),
+                'cancelled' => $query->where('status', 'cancelled'),
+                default => null,
+            };
         } elseif ($activeTab === 'delivery-orders' && $queue) {
             match($queue) {
                 'awaiting_warehouse' => $query->where('status', 'awaiting_warehouse'),
@@ -272,11 +283,21 @@ class TransportController extends Controller
         // Operational Statistics Analytics
         $analytics = $this->executionEngine->getOperationalAnalytics();
 
+        // Layout B Status Card Counts
+        $statusCounts = [
+            'all' => TransportRequest::count(),
+            'ready' => TransportRequest::whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed'])->count(),
+            'assigned' => TransportRequest::whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count(),
+            'active' => TransportRequest::whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery'])->count(),
+            'completed' => TransportRequest::whereIn('status', ['delivered', 'completed'])->count(),
+            'cancelled' => TransportRequest::where('status', 'cancelled')->count(),
+        ];
+
         // Operational Overview Counts (Minimal Operational Metrics)
         $ordersAwaitingWarehouseCount = TransportRequest::where('status', 'awaiting_warehouse')->count();
-        $ordersReadyAssignmentCount = TransportRequest::whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed'])->count();
-        $ordersAssignedCount = TransportRequest::whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count();
-        $activeDeliveriesCount = TransportRequest::whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery'])->count();
+        $ordersReadyAssignmentCount = $statusCounts['ready'];
+        $ordersAssignedCount = $statusCounts['assigned'];
+        $activeDeliveriesCount = $statusCounts['active'];
 
         $selectedId = $request->get('task_id', $requests->first()?->id);
         $selectedTask = $selectedId ? TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip', 'dispatchManifest', 'dispatchChecklist', 'acceptedByUser', 'creator', 'deliveryTimelines'])->find($selectedId) : null;
@@ -286,7 +307,7 @@ class TransportController extends Controller
             'availableVehicles', 'availableDrivers', 'availableCities', 'activeTrips',
             'pendingClosureTrips', 'archivedTrips', 'complianceAlerts', 'analytics',
             'status', 'priority', 'city', 'search', 'driverSearch', 'driverStatus',
-            'vehicleSearch', 'vehicleStatus',
+            'vehicleSearch', 'vehicleStatus', 'statusCard', 'statusCounts',
             'ordersAwaitingWarehouseCount', 'ordersReadyAssignmentCount', 'ordersAssignedCount', 'activeDeliveriesCount'
         ));
     }
