@@ -10,11 +10,11 @@
                         Total Registered Drivers: {{ $drivers->total() }}
                     </span>
                 </div>
-                <h4 class="fw-black text-body mb-0">👤 Driver Management</h4>
+                <h4 class="fw-black text-body mb-0">Driver Management</h4>
                 <p class="text-muted small mb-0 mt-1">Permanent driver identities (`DRV-000001`), verification, license compliance, operational statuses & suspension audits.</p>
             </div>
             <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-bold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRegisterDriver">
-                <span>➕</span> Register New Driver
+                Register New Driver
             </button>
         </div>
 

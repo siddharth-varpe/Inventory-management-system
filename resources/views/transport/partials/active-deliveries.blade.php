@@ -2,7 +2,7 @@
     <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
             <div>
-                <h4 class="fw-black text-body mb-0">🚛 Active Transport Deliveries</h4>
+                <h4 class="fw-black text-body mb-0">Active Transport Deliveries</h4>
                 <p class="text-muted small mb-0 mt-1">Live operational tracking of active shipments currently dispatched or in transit.</p>
             </div>
             <div class="d-flex align-items-center gap-2">

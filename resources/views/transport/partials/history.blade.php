@@ -2,7 +2,7 @@
     <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
             <div>
-                <h4 class="fw-black text-body mb-0">📋 Transport History Archive</h4>
+                <h4 class="fw-black text-body mb-0">Transport History Archive</h4>
                 <p class="text-muted small mb-0 mt-1">Archived records of completed, delivered, and cancelled transport orders.</p>
             </div>
             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-2 fw-bold">

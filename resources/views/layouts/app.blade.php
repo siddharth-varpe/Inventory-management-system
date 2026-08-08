@@ -122,6 +122,167 @@
             border-bottom: 2px solid var(--bs-border-color-translucent) !important;
         }
 
+        /* ========================================================================= */
+        /* STOCKMANAGER ENTERPRISE GLOBAL DESIGN SYSTEM                              */
+        /* ========================================================================= */
+
+        /* 1. TYPOGRAPHY HIERARCHY */
+        .page-title, h1.h3 {
+            font-size: 1.75rem !important; /* 28px */
+            font-weight: 700 !important;
+            letter-spacing: -0.02em !important;
+            line-height: 1.25 !important;
+        }
+
+        .section-title, h2.h4, h3.h5 {
+            font-size: 1.25rem !important; /* 20px */
+            font-weight: 600 !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        .card-title, h4.h5, h5.h6 {
+            font-size: 1.05rem !important; /* 16.8px */
+            font-weight: 600 !important;
+        }
+
+        .body-text, p, td, th {
+            font-size: 0.9rem !important; /* ~14.4px */
+        }
+
+        .secondary-text, .text-muted {
+            font-size: 0.825rem !important; /* ~13.2px */
+        }
+
+        .label-text, label, .form-label {
+            font-size: 0.8rem !important; /* ~12.8px */
+            font-weight: 500 !important;
+        }
+
+        .badge-text, .badge {
+            font-size: 0.725rem !important; /* ~11.6px */
+            font-weight: 600 !important;
+            letter-spacing: 0.02em;
+        }
+
+        /* 2. CANONICAL CARD COMPONENT */
+        .card, .erp-card {
+            border-radius: 0.75rem !important; /* 12px */
+            border: 1px solid var(--bs-border-color-translucent) !important;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+            background-color: var(--bs-body-bg);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-header {
+            background-color: var(--bs-body-bg);
+            border-bottom: 1px solid var(--bs-border-color-translucent);
+            padding: 1rem 1.25rem;
+        }
+
+        .card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .card-footer {
+            background-color: var(--bs-tertiary-bg);
+            border-top: 1px solid var(--bs-border-color-translucent);
+            padding: 0.875rem 1.25rem;
+        }
+
+        /* 3. CANONICAL BUTTON COMPONENT */
+        .btn {
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem; /* 8px */
+            padding: 0.5rem 1rem;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .btn-sm {
+            height: 34px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+        }
+
+        .btn-lg {
+            height: 48px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        /* 4. CANONICAL FORM INPUT SYSTEM */
+        .form-control, .form-select {
+            height: 40px;
+            font-size: 0.875rem;
+            border-radius: 0.5rem; /* 8px */
+            border: 1px solid var(--bs-border-color-translucent);
+            padding: 0.5rem 0.875rem;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control-sm, .form-select-sm {
+            height: 34px;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+        }
+
+        /* 5. CANONICAL TABLE SYSTEM */
+        .table {
+            --bs-table-bg: transparent;
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: var(--erp-table-header-bg) !important;
+            color: var(--erp-table-header-color) !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            font-size: 0.725rem !important;
+            letter-spacing: 0.04em;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--bs-border-color-translucent) !important;
+        }
+
+        .table tbody td {
+            padding: 0.875rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--bs-border-color-translucent);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: var(--bs-tertiary-bg);
+        }
+
+        /* 6. CANONICAL EMPTY STATE */
+        .erp-empty-state {
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            background-color: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color-translucent);
+            border-radius: 0.75rem;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;

@@ -10,11 +10,11 @@
                         Total Registered Fleet: {{ $vehicles->total() }} Vehicles
                     </span>
                 </div>
-                <h4 class="fw-black text-body mb-0">🚛 Vehicle Management</h4>
+                <h4 class="fw-black text-body mb-0">Vehicle Management</h4>
                 <p class="text-muted small mb-0 mt-1">Permanent vehicle identities (`VEH-000001`), legal registration numbers, weight capacities (kg), document compliance & maintenance logs.</p>
             </div>
             <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-bold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRegisterVehicle">
-                <span>➕</span> Register New Vehicle
+                Register New Vehicle
             </button>
         </div>
 

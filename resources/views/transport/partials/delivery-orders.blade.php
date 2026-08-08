@@ -10,7 +10,7 @@
                 Total Orders: {{ $statusCounts['all'] ?? $requests->total() }}
             </span>
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-3 fw-bold d-flex align-items-center gap-1.5" onclick="refreshDeliveryOrders()">
-                🔄 Refresh
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg> Refresh
             </button>
         </div>
     </div>
@@ -74,7 +74,9 @@
             <!-- Search Field (Flex: 2) -->
             <div class="filter-search-wrap">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-body border-translucent text-muted">🔍</span>
+                    <span class="input-group-text bg-body border-translucent text-muted">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    </span>
                     <input type="text" name="search" class="form-control bg-body border-translucent" 
                            placeholder="Search Order ID, Customer, City..." 
                            value="{{ request('search') }}">
@@ -85,9 +87,9 @@
             <div class="filter-select-wrap">
                 <select name="priority" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
                     <option value="all">All Priorities</option>
-                    <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>🚨 Urgent Priority</option>
-                    <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>🔥 High Priority</option>
-                    <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>📦 Normal Priority</option>
+                    <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Urgent Priority</option>
+                    <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High Priority</option>
+                    <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>Normal Priority</option>
                 </select>
             </div>
 
@@ -96,7 +98,7 @@
                 <select name="city" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
                     <option value="all">All Cities</option>
                     @foreach($availableCities as $c)
-                        <option value="{{ $c }}" {{ request('city') == $c ? 'selected' : '' }}>📍 {{ $c }}</option>
+                        <option value="{{ $c }}" {{ request('city') == $c ? 'selected' : '' }}>{{ $c }}</option>
                     @endforeach
                 </select>
             </div>
@@ -138,7 +140,7 @@
                 <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="fs-5">🚚</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
                             <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-black text-primary text-decoration-none fs-5 font-monospace">
                                 {{ $r->order_reference }}
                             </a>
@@ -162,7 +164,7 @@
                                 </span>
                             @else
                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill small" style="font-size: 0.75rem;">
-                                    📦 Warehouse In Progress
+                                    Warehouse In Progress
                                 </span>
                             @endif
                         </div>
@@ -181,7 +183,7 @@
                     <div>
                         <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>
                         @if($r->driver)
-                            <div class="fw-bold text-body small">👤 {{ $r->driver->driver_name }}</div>
+                            <div class="fw-bold text-body small">{{ $r->driver->driver_name }}</div>
                             <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
                         @else
                             <div class="text-muted small fst-italic">Not Assigned</div>
@@ -192,7 +194,7 @@
                     <div>
                         <div class="text-muted small" style="font-size: 0.75rem;">Assigned Vehicle</div>
                         @if($r->vehicle)
-                            <div class="fw-bold text-body font-monospace small">🚛 {{ $r->vehicle->vehicle_number }}</div>
+                            <div class="fw-bold text-body font-monospace small">{{ $r->vehicle->vehicle_number }}</div>
                             <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
                         @else
                             <div class="text-muted small fst-italic">Not Assigned</div>
@@ -228,27 +230,27 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-translucent">
                                 <li>
                                     <a class="dropdown-item small" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
-                                        📄 View Profile
+                                        View Profile
                                     </a>
                                 </li>
                                 @if(!in_array($r->status, ['dispatched', 'in_transit', 'delivered', 'completed', 'cancelled']))
                                     <li>
                                         <a class="dropdown-item small" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
-                                            👤 Assign Driver & Vehicle
+                                            Assign Driver & Vehicle
                                         </a>
                                     </li>
                                 @endif
                                 @if(in_array($r->status, ['driver_vehicle_assigned', 'assigned', 'ready_for_dispatch']))
                                     <li>
                                         <a class="dropdown-item small text-success fw-bold" href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})">
-                                            🚀 Confirm Dispatch
+                                            Confirm Dispatch
                                         </a>
                                     </li>
                                 @endif
                                 @if(in_array($r->status, ['dispatched', 'in_transit']))
                                     <li>
                                         <a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="openCancelDispatchModal({{ $r->id }}, '{{ $r->order_reference }}', '{{ $r->dispatch_number }}')">
-                                            🚫 Cancel Dispatch
+                                            Cancel Dispatch
                                         </a>
                                     </li>
                                 @endif
@@ -260,7 +262,9 @@
         @empty
             <!-- EMPTY STATE CARD (FULL WIDTH & CENTERED) -->
             <div class="card p-5 rounded-4 border-translucent bg-body text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 320px;">
-                <div class="fs-1 mb-2">📦</div>
+                <div class="mb-3 text-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l.24.462 6.27-2.308 6.27 2.308.24-.462-6.34-2.387zM15 4.239l-6.5 2.6-6.5-2.6V12.5a.5.5 0 0 0 .25.433l6 3.5a.5.5 0 0 0 .5 0l6-3.5a.5.5 0 0 0 .25-.433V4.239z"/></svg>
+                </div>
                 <h5 class="fw-bold text-body mb-1">No delivery orders found</h5>
                 <p class="text-muted small mb-3">Orders synchronized from CRM and Warehouse will appear here.</p>
                 @if(request('search') || request('priority') || request('city') || request('status_card'))
