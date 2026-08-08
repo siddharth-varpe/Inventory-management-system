@@ -43,9 +43,11 @@ class TransportController extends Controller
         } else {
             $activeTab = match(strtolower($activeTab)) {
                 'dashboard', 'overview' => 'overview',
-                'delivery-orders', 'trips', 'dispatch', 'active', 'history' => 'delivery-orders',
+                'delivery-orders' => 'delivery-orders',
                 'drivers' => 'drivers',
                 'vehicles', 'maintenance' => 'vehicles',
+                'active', 'trips', 'dispatch' => 'active',
+                'history' => 'history',
                 default => 'overview',
             };
         }
@@ -141,7 +143,11 @@ class TransportController extends Controller
 
         $queue = $request->get('queue');
 
-        if ($activeTab === 'delivery-orders' && $queue) {
+        if ($activeTab === 'active') {
+            $query->whereIn('status', ['driver_vehicle_assigned', 'dispatched', 'in_transit', 'out_for_delivery']);
+        } elseif ($activeTab === 'history') {
+            $query->whereIn('status', ['delivered', 'completed', 'returned_to_warehouse', 'cancelled', 'archived']);
+        } elseif ($activeTab === 'delivery-orders' && $queue) {
             match($queue) {
                 'awaiting_warehouse' => $query->where('status', 'awaiting_warehouse'),
                 'ready_for_assignment' => $query->whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed']),
