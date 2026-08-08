@@ -164,13 +164,69 @@
             letter-spacing: 0.02em;
         }
 
-        /* 2. CANONICAL CARD COMPONENT */
+        /* High-contrast status badges & Visibility enhancement */
+        .badge {
+            font-size: 0.725rem !important;
+            font-weight: 600 !important;
+            padding: 0.35rem 0.65rem !important;
+            letter-spacing: 0.02em;
+            border-radius: 0.375rem !important;
+        }
+
+        .badge.bg-primary-subtle {
+            background-color: rgba(37, 99, 235, 0.12) !important;
+            color: #1d4ed8 !important;
+            border: 1px solid rgba(37, 99, 235, 0.25) !important;
+        }
+
+        .badge.bg-success-subtle {
+            background-color: rgba(22, 163, 74, 0.12) !important;
+            color: #15803d !important;
+            border: 1px solid rgba(22, 163, 74, 0.25) !important;
+        }
+
+        .badge.bg-warning-subtle {
+            background-color: rgba(217, 119, 6, 0.12) !important;
+            color: #b45309 !important;
+            border: 1px solid rgba(217, 119, 6, 0.25) !important;
+        }
+
+        .badge.bg-danger-subtle {
+            background-color: rgba(220, 38, 38, 0.12) !important;
+            color: #b91c1c !important;
+            border: 1px solid rgba(220, 38, 38, 0.25) !important;
+        }
+
+        .badge.bg-info-subtle {
+            background-color: rgba(14, 165, 233, 0.12) !important;
+            color: #0369a1 !important;
+            border: 1px solid rgba(14, 165, 233, 0.25) !important;
+        }
+
+        .badge.bg-secondary-subtle {
+            background-color: rgba(100, 116, 139, 0.12) !important;
+            color: #334155 !important;
+            border: 1px solid rgba(100, 116, 139, 0.25) !important;
+        }
+
+        .badge-status-converted {
+            background-color: var(--erp-subtle-purple-bg) !important;
+            color: var(--erp-subtle-purple-text) !important;
+            border: 1px solid var(--erp-subtle-purple-border) !important;
+        }
+
+        /* 2. CANONICAL CARD COMPONENT WITH STANDARD PADDING & HIGH VISIBILITY */
         .card, .erp-card {
             border-radius: 0.75rem !important; /* 12px */
             border: 1px solid var(--bs-border-color-translucent) !important;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+            box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
             background-color: var(--bs-body-bg);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08) !important;
+            border-color: rgba(37, 99, 235, 0.3) !important;
         }
 
         .card-header {
