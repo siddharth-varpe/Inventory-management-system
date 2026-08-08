@@ -1,4 +1,4 @@
-<div class="col-12">
+<div>
     <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body">
         
         <!-- Header & Register Action -->

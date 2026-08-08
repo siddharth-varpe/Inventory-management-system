@@ -1,4 +1,4 @@
-<div class="col-12">
+<div>
     <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body">
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
             <div>

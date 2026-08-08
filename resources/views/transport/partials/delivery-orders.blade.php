@@ -1,6 +1,6 @@
-<div class="col-12">
+<div>
     <!-- MAIN PAGE HEADER -->
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
         <div>
             <h3 class="fw-black text-body mb-0">Delivery Orders</h3>
             <p class="text-muted small mb-0 mt-1">Synchronized Sales Orders from CRM & Organize Stock</p>
@@ -15,76 +15,64 @@
         </div>
     </div>
 
-    <!-- STATUS SUMMARY FILTER CARDS (LAYOUT B) -->
-    <div class="row g-3 mb-4">
+    <!-- STATUS SUMMARY FILTER CARDS (LAYOUT B - FULL WIDTH 6 COLUMNS) -->
+    <div class="status-cards-grid mb-3">
         @php
             $currentStatusCard = request('status_card', 'all');
         @endphp
         <!-- ALL -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'all'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'all' ? 'border-primary bg-primary-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ALL</div>
-                <div class="fs-4 fw-black text-primary font-monospace">{{ $statusCounts['all'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'all'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'all' ? 'border-primary bg-primary-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ALL</div>
+            <div class="fs-4 fw-black text-primary font-monospace">{{ $statusCounts['all'] ?? 0 }}</div>
+        </a>
 
         <!-- READY -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'ready'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'ready' ? 'border-success bg-success-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">READY</div>
-                <div class="fs-4 fw-black text-success font-monospace">{{ $statusCounts['ready'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'ready'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'ready' ? 'border-success bg-success-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">READY</div>
+            <div class="fs-4 fw-black text-success font-monospace">{{ $statusCounts['ready'] ?? 0 }}</div>
+        </a>
 
         <!-- ASSIGNED -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'assigned'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'assigned' ? 'border-purple bg-purple-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ASSIGNED</div>
-                <div class="fs-4 fw-black text-purple font-monospace" style="color: #9333ea;">{{ $statusCounts['assigned'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'assigned'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'assigned' ? 'border-purple bg-purple-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ASSIGNED</div>
+            <div class="fs-4 fw-black text-purple font-monospace" style="color: #9333ea;">{{ $statusCounts['assigned'] ?? 0 }}</div>
+        </a>
 
         <!-- ACTIVE -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'active'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'active' ? 'border-warning bg-warning-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ACTIVE</div>
-                <div class="fs-4 fw-black text-warning font-monospace">{{ $statusCounts['active'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'active'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'active' ? 'border-warning bg-warning-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ACTIVE</div>
+            <div class="fs-4 fw-black text-warning font-monospace">{{ $statusCounts['active'] ?? 0 }}</div>
+        </a>
 
         <!-- COMPLETED -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'completed'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'completed' ? 'border-info bg-info-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">COMPLETED</div>
-                <div class="fs-4 fw-black text-info font-monospace">{{ $statusCounts['completed'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'completed'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'completed' ? 'border-info bg-info-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">COMPLETED</div>
+            <div class="fs-4 fw-black text-info font-monospace">{{ $statusCounts['completed'] ?? 0 }}</div>
+        </a>
 
         <!-- CANCELLED -->
-        <div class="col-6 col-sm-4 col-md-2">
-            <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'cancelled'])) }}" 
-               class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'cancelled' ? 'border-danger bg-danger-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-                <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">CANCELLED</div>
-                <div class="fs-4 fw-black text-danger font-monospace">{{ $statusCounts['cancelled'] ?? 0 }}</div>
-            </a>
-        </div>
+        <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'cancelled'])) }}" 
+           class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'cancelled' ? 'border-danger bg-danger-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
+            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">CANCELLED</div>
+            <div class="fs-4 fw-black text-danger font-monospace">{{ $statusCounts['cancelled'] ?? 0 }}</div>
+        </a>
     </div>
 
-    <!-- SEARCH & FILTER ROW -->
-    <div class="card p-3 rounded-4 shadow-sm border-translucent bg-body mb-4">
-        <form method="GET" action="{{ route('transport.index') }}" id="deliveryFilterForm" class="row g-2 align-items-center">
+    <!-- SEARCH & FILTER BAR (FULL WIDTH FLEX LAYOUT) -->
+    <div class="card p-3 rounded-4 shadow-sm border-translucent bg-body mb-3">
+        <form method="GET" action="{{ route('transport.index') }}" id="deliveryFilterForm" class="filter-bar-flex">
             <input type="hidden" name="tab" value="delivery-orders">
             @if(request('status_card'))
                 <input type="hidden" name="status_card" value="{{ request('status_card') }}">
             @endif
 
-            <!-- Search Field -->
-            <div class="col-md-5">
+            <!-- Search Field (Flex: 2) -->
+            <div class="filter-search-wrap">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-body border-translucent text-muted">🔍</span>
                     <input type="text" name="search" class="form-control bg-body border-translucent" 
@@ -93,8 +81,8 @@
                 </div>
             </div>
 
-            <!-- Priority Dropdown -->
-            <div class="col-md-3">
+            <!-- Priority Dropdown (Flex: 1) -->
+            <div class="filter-select-wrap">
                 <select name="priority" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
                     <option value="all">All Priorities</option>
                     <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>🚨 Urgent Priority</option>
@@ -103,8 +91,8 @@
                 </select>
             </div>
 
-            <!-- City Dropdown -->
-            <div class="col-md-2">
+            <!-- City Dropdown (Flex: 1) -->
+            <div class="filter-select-wrap">
                 <select name="city" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
                     <option value="all">All Cities</option>
                     @foreach($availableCities as $c)
@@ -113,18 +101,18 @@
                 </select>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="col-md-2 d-flex gap-1.5 justify-content-end">
-                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold rounded-3">Filter</button>
+            <!-- Action Buttons (Flex: Auto, Aligned Right) -->
+            <div class="filter-actions-wrap">
+                <button type="submit" class="btn btn-sm btn-primary fw-bold rounded-3 px-3">Filter</button>
                 @if(request('search') || request('priority') || request('city') || request('status_card'))
-                    <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm btn-outline-secondary rounded-3" title="Reset Filters">Reset</a>
+                    <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3" title="Reset Filters">Reset</a>
                 @endif
             </div>
         </form>
     </div>
 
     <!-- LOADING SKELETON CONTAINER (HIDDEN BY DEFAULT) -->
-    <div id="deliveryCardsSkeleton" class="vstack gap-3 d-none mb-4">
+    <div id="deliveryCardsSkeleton" class="vstack gap-3 d-none mb-3">
         @for($i = 0; $i < 3; $i++)
             <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body placeholder-glow">
                 <div class="d-flex justify-content-between pb-3 border-bottom border-translucent">
@@ -142,7 +130,7 @@
         @endfor
     </div>
 
-    <!-- DELIVERY CARDS CONTAINER (LAYOUT B CORE STRUCTURE) -->
+    <!-- DELIVERY CARDS CONTAINER (LAYOUT B CORE STRUCTURE - 100% FULL WIDTH) -->
     <div id="deliveryCardsContainer" class="vstack gap-3">
         @forelse($requests as $r)
             <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
@@ -183,46 +171,44 @@
                     <!-- CUSTOMER & DESTINATION -->
                     <div class="text-md-end">
                         <div class="fw-bold text-body fs-6">{{ $r->customer_name }}</div>
-                        <div class="small text-muted">📍 {{ $r->city }} — <span class="text-truncate d-inline-block align-bottom" style="max-width: 250px;">{{ $r->delivery_address }}</span></div>
+                        <div class="small text-muted">📍 {{ $r->city }} — <span class="text-truncate d-inline-block align-bottom" style="max-width: 350px;">{{ $r->delivery_address }}</span></div>
                     </div>
                 </div>
 
-                <!-- CARD FOOTER: DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS -->
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-3">
-                    <div class="row g-3 flex-grow-1 align-items-center">
-                        <!-- ASSIGNED DRIVER -->
-                        <div class="col-6 col-md-4">
-                            <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>
-                            @if($r->driver)
-                                <div class="fw-bold text-body small">👤 {{ $r->driver->driver_name }}</div>
-                                <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
-                            @else
-                                <div class="text-muted small fst-italic">Not Assigned</div>
-                            @endif
-                        </div>
+                <!-- CARD FOOTER: DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS (4-COLUMN GRID) -->
+                <div class="card-footer-grid pt-3">
+                    <!-- ASSIGNED DRIVER -->
+                    <div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>
+                        @if($r->driver)
+                            <div class="fw-bold text-body small">👤 {{ $r->driver->driver_name }}</div>
+                            <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
+                        @else
+                            <div class="text-muted small fst-italic">Not Assigned</div>
+                        @endif
+                    </div>
 
-                        <!-- ASSIGNED VEHICLE -->
-                        <div class="col-6 col-md-4">
-                            <div class="text-muted small" style="font-size: 0.75rem;">Assigned Vehicle</div>
-                            @if($r->vehicle)
-                                <div class="fw-bold text-body font-monospace small">🚛 {{ $r->vehicle->vehicle_number }}</div>
-                                <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
-                            @else
-                                <div class="text-muted small fst-italic">Not Assigned</div>
-                            @endif
-                        </div>
+                    <!-- ASSIGNED VEHICLE -->
+                    <div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">Assigned Vehicle</div>
+                        @if($r->vehicle)
+                            <div class="fw-bold text-body font-monospace small">🚛 {{ $r->vehicle->vehicle_number }}</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
+                        @else
+                            <div class="text-muted small fst-italic">Not Assigned</div>
+                        @endif
+                    </div>
 
-                        <!-- EXPECTED DELIVERY -->
-                        <div class="col-12 col-md-4">
-                            <div class="text-muted small" style="font-size: 0.75rem;">Expected Delivery</div>
-                            <div class="fw-semibold text-body small font-monospace">
-                                {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
-                            </div>
+                    <!-- EXPECTED DELIVERY -->
+                    <div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">Expected Delivery</div>
+                        <div class="fw-semibold text-body small font-monospace">
+                            {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
                         </div>
                     </div>
 
                     <!-- ACTION BUTTON & THREE-DOT DROPDOWN MENU -->
-                    <div class="d-flex align-items-center gap-2 ms-md-auto">
+                    <div class="d-flex align-items-center gap-2 justify-content-end">
                         <button type="button" class="btn btn-sm btn-primary px-3.5 fw-bold rounded-3 shadow-sm" onclick="openDeliveryOrderProfile({{ $r->id }})">
                             @if(in_array($r->status, ['ready_for_assignment', 'waiting_planning', 'awaiting_warehouse']))
                                 View / Assign
@@ -272,8 +258,8 @@
                 </div>
             </div>
         @empty
-            <!-- EMPTY STATE CARD -->
-            <div class="card p-5 rounded-4 border-translucent bg-body text-center">
+            <!-- EMPTY STATE CARD (FULL WIDTH & CENTERED) -->
+            <div class="card p-5 rounded-4 border-translucent bg-body text-center d-flex flex-column align-items-center justify-content-center" style="min-height: 320px;">
                 <div class="fs-1 mb-2">📦</div>
                 <h5 class="fw-bold text-body mb-1">No delivery orders found</h5>
                 <p class="text-muted small mb-3">Orders synchronized from CRM and Warehouse will appear here.</p>
