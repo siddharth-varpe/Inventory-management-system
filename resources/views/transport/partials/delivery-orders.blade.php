@@ -173,15 +173,15 @@
     <!-- DELIVERY CARDS CONTAINER (LAYOUT MATCHING SCREENSHOT EXACTLY) -->
     <div id="deliveryCardsContainer" class="vstack gap-3">
         @forelse($requests as $r)
-            <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
+            <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
                 
                 <!-- SECTION 1: TOP HEADER SECTION (ANNOTATED ITEMS 1 - 8) -->
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pb-3.5 border-bottom border-translucent">
                     <!-- LEFT SIDE: ITEM 1 (AVATAR), ITEM 2 (ORDER ID), ITEM 3 (TASK ID), ITEM 4 (STATUS BADGE), ITEM 5 (PRIORITY BADGE), ITEM 6 (SEAL BADGE) -->
                     <div class="d-flex align-items-center gap-3">
-                        <!-- ITEM 1: CIRCLE TRUCK AVATAR (52px x 52px) -->
-                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle rounded-circle" style="width: 52px; height: 52px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16">
+                        <!-- ITEM 1: CIRCLE TRUCK AVATAR (56px x 56px) -->
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle rounded-circle" style="width: 56px; height: 56px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16">
                                 <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/>
                             </svg>
                         </div>
@@ -240,7 +240,7 @@
                 </div>
 
                 <!-- SECTION 2: MIDDLE METADATA GRID SECTION (ANNOTATED ITEMS 9 - 12) -->
-                <div class="py-3 border-bottom border-translucent">
+                <div class="py-3.5 border-bottom border-translucent">
                     <div class="row g-3 align-items-center">
                         <!-- ITEM 9: CUSTOMER -->
                         <div class="col-12 col-sm-6 col-md-3">
@@ -277,7 +277,7 @@
                 </div>
 
                 <!-- SECTION 3: BOTTOM OPERATIONAL ASSIGNMENT & ACTIONS SECTION (ANNOTATED ITEMS 13 - 17) -->
-                <div class="pt-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="pt-3.5 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     
                     <div class="d-flex flex-wrap align-items-center gap-4 flex-grow-1">
                         
