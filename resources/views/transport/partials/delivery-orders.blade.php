@@ -136,7 +136,7 @@
     <div id="deliveryCardsContainer" class="vstack gap-3">
         @forelse($requests as $r)
             <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
-                <!-- CARD HEADER: ORDER ID, STATUS, CUSTOMER, DESTINATION -->
+                <!-- CARD HEADER: ORDER ID, CUSTOMER, DESTINATION -->
                 <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1">
@@ -144,12 +144,6 @@
                             <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-black text-primary text-decoration-none fs-5 font-monospace">
                                 {{ $r->order_reference }}
                             </a>
-                            <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small">
-                                {{ strtoupper($r->priority ?? 'NORMAL') }}
-                            </span>
-                            <span class="badge rounded-pill {{ $r->status_badge_class }} px-2.5 py-1 small">
-                                {{ $r->status_label }}
-                            </span>
                         </div>
                         <div class="d-flex align-items-center gap-3">
                             <span class="small text-muted font-monospace" style="font-size: 0.78rem;">Task ID: {{ $r->request_number }}</span>
@@ -177,8 +171,21 @@
                     </div>
                 </div>
 
-                <!-- CARD FOOTER: DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS (4-COLUMN GRID) -->
+                <!-- CARD FOOTER / OPERATIONAL GRID: PRIORITY, STATUS, DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS -->
                 <div class="card-footer-grid pt-3">
+                    <!-- PRIORITY & STATUS BADGES -->
+                    <div>
+                        <div class="text-muted small mb-1" style="font-size: 0.75rem;">Priority & Status</div>
+                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                            <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small">
+                                {{ strtoupper($r->priority ?? 'NORMAL') }}
+                            </span>
+                            <span class="badge rounded-pill {{ $r->status_badge_class }} px-2.5 py-1 small">
+                                {{ $r->status_label }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- ASSIGNED DRIVER -->
                     <div>
                         <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>

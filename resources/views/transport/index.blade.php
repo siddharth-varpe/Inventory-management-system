@@ -88,15 +88,15 @@
 
     .card-footer-grid {
         display: grid;
-        grid-template-columns: 1.5fr 1.5fr 1fr auto;
+        grid-template-columns: 1.2fr 1.5fr 1.5fr 1fr auto;
         gap: 1.25rem;
         align-items: center;
         width: 100%;
     }
 
-    @media (max-width: 991.98px) {
+    @media (max-width: 1199.98px) {
         .card-footer-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
         }
     }
 
