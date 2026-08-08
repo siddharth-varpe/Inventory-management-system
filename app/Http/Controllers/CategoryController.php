@@ -37,7 +37,7 @@ class CategoryController extends Controller
     public function index(Request $request): View
     {
         $categories = $this->categoryService->paginate(15);
-        $allCategories = $this->categoryService->all();
+        $allCategories = $this->categoryService->getAll();
 
         return view('categories.index', compact('categories', 'allCategories'));
     }

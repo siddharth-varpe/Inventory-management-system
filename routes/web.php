@@ -42,7 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Organization Infrastructure
-    Route::resource('companies', CompanyController::class)->except(['create', 'show', 'edit']);
+    Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::put('/companies', [CompanyController::class, 'update'])->name('company.update');
     Route::resource('branches', BranchController::class)->except(['create', 'show', 'edit']);
     Route::resource('departments', DepartmentController::class)->except(['create', 'show', 'edit']);
 

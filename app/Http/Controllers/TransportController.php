@@ -732,7 +732,7 @@ class TransportController extends Controller
         $pendingClosureCount = TransportTrip::where('status', 'pending_closure')->count();
 
         $tasks = TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip', 'dispatchManifest'])
-            ->orderByRaw("FIELD(priority, 'urgent', 'high', 'normal', 'medium', 'low')")
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'medium' THEN 4 ELSE 5 END")
             ->take(30)
             ->get()
             ->map(function ($t) {

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             PortalModuleSeeder::class,
             SupplierSeeder::class,
             WarehouseSeeder::class,
+            MasterDataSeeder::class,
         ]);
     }
 }
