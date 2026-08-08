@@ -298,12 +298,37 @@ class TransportController extends Controller
         $ordersReadyAssignmentCount = $statusCounts['ready'];
         $ordersAssignedCount = $statusCounts['assigned'];
         $activeDeliveriesCount = $statusCounts['active'];
+        $driverCounts = [
+            'all' => Driver::count(),
+            'available' => Driver::where('status', 'available')->count(),
+            'on_delivery' => Driver::whereIn('status', ['on_delivery', 'on_trip', 'on_duty'])->count(),
+            'leave' => Driver::whereIn('status', ['leave', 'on_leave'])->count(),
+            'suspended' => Driver::where('status', 'suspended')->count(),
+            'inactive' => Driver::where('status', 'inactive')->count(),
+            'expiring_soon' => Driver::whereNotNull('license_expiry_date')->where('license_expiry_date', '<=', now()->addDays(30))->count(),
+        ];
+
+        $limit30Days = now()->addDays(30);
+        $vehicleCounts = [
+            'all' => Vehicle::count(),
+            'available' => Vehicle::where('status', 'available')->count(),
+            'on_trip' => Vehicle::where('status', 'on_trip')->count(),
+            'maintenance' => Vehicle::where('status', 'maintenance')->count(),
+            'breakdown' => Vehicle::where('status', 'breakdown')->count(),
+            'inactive' => Vehicle::where('status', 'inactive')->count(),
+            'expiring_documents' => Vehicle::where(function ($q) use ($limit30Days) {
+                $q->where('insurance_expiry_date', '<=', $limit30Days)
+                  ->orWhere('fitness_expiry_date', '<=', $limit30Days)
+                  ->orWhere('puc_expiry_date', '<=', $limit30Days)
+                  ->orWhere('permit_expiry_date', '<=', $limit30Days);
+            })->count(),
+        ];
 
         $selectedId = $request->get('task_id', $requests->first()?->id);
         $selectedTask = $selectedId ? TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip', 'dispatchManifest', 'dispatchChecklist', 'acceptedByUser', 'creator', 'deliveryTimelines'])->find($selectedId) : null;
 
         return view('transport.index', compact(
-            'activeTab', 'drivers', 'allDrivers', 'vehicles', 'allVehicles', 'allTrips', 'requests', 'selectedTask',
+            'activeTab', 'drivers', 'allDrivers', 'driverCounts', 'vehicles', 'allVehicles', 'vehicleCounts', 'allTrips', 'requests', 'selectedTask',
             'availableVehicles', 'availableDrivers', 'availableCities', 'activeTrips',
             'pendingClosureTrips', 'archivedTrips', 'complianceAlerts', 'analytics',
             'status', 'priority', 'city', 'search', 'driverSearch', 'driverStatus',
