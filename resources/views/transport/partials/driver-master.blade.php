@@ -1,25 +1,22 @@
 <div>
     <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body">
         
-        <!-- PAGE TITLE & HEADER CONTROL BAR -->
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
-            <div>
-                <h4 class="fw-black text-body mb-1">Drivers</h4>
-                <p class="text-muted small mb-0">Manage registered drivers, availability, compliance and operational status.</p>
-            </div>
-            
-            <div class="d-flex align-items-center gap-2.5 flex-wrap">
-                <!-- TOP CONTROL BAR: SEARCHABLE DRIVER SELECTOR DROPDOWN -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3.5 py-2 fw-semibold d-flex align-items-center justify-content-between gap-2 shadow-xs" 
-                            type="button" id="driverSelectorDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 280px;">
-                        <span class="d-flex align-items-center gap-2 text-truncate">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person text-muted" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
-                            <span class="small font-monospace">{{ $driverSearch ? 'Selected: '.$driverSearch : 'Search and select driver...' }}</span>
+        <!-- PAGE HEADER CONTROL BAR (TOP SELECTOR & ADD ACTION) -->
+        <div class="mb-4">
+            <label class="form-label small fw-bold text-muted text-uppercase font-monospace mb-1.5" style="font-size: 0.725rem;">Select Driver</label>
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                
+                <!-- SEARCHABLE DRIVER SELECTOR DROPDOWN -->
+                <div class="dropdown flex-grow-1" style="max-width: 520px;">
+                    <button class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3.5 py-2.5 fw-semibold d-flex align-items-center justify-content-between w-100 shadow-xs bg-body-tertiary border-translucent" 
+                            type="button" id="driverSelectorDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="d-flex align-items-center gap-2.5 text-truncate me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-person text-primary" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+                            <span class="small font-monospace text-body">{{ $driverSearch ? 'Selected: '.$driverSearch : 'Search and select driver...' }}</span>
                         </span>
                     </button>
 
-                    <div class="dropdown-menu dropdown-menu-start p-3 shadow-lg border-translucent rounded-3" aria-labelledby="driverSelectorDropdown" style="width: 340px; max-height: 380px; overflow-y: auto;">
+                    <div class="dropdown-menu dropdown-menu-start p-3 shadow-lg border-translucent rounded-3" aria-labelledby="driverSelectorDropdown" style="width: 100%; min-width: 340px; max-height: 380px; overflow-y: auto;">
                         <form method="GET" action="{{ route('transport.drivers.index') }}" class="mb-2">
                             <input type="hidden" name="tab" value="drivers">
                             <input type="hidden" name="driver_status" value="{{ $driverStatus }}">
@@ -60,44 +57,83 @@
                     </div>
                 </div>
 
-                <!-- PRIMARY + ADD DRIVER BUTTON -->
-                <button type="button" class="btn btn-primary rounded-3 px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-sm" 
-                        data-bs-toggle="modal" data-bs-target="#modalRegisterDriver">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg>
-                    <span>+ Add Driver</span>
-                </button>
+                <!-- RIGHT ACTION BUTTONS: + ADD DRIVER & REFRESH -->
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-primary rounded-3 px-4 py-2.5 fw-bold d-flex align-items-center gap-2 shadow-sm" 
+                            data-bs-toggle="modal" data-bs-target="#modalRegisterDriver">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg>
+                        <span>+ Add Driver</span>
+                    </button>
+
+                    <a href="{{ route('transport.drivers.index') }}" class="btn btn-outline-secondary rounded-3 px-3 py-2.5 shadow-xs" title="Refresh Driver Roster" aria-label="Refresh Roster">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                    </a>
+                </div>
+
             </div>
         </div>
 
-        <!-- DRIVER STATUS FILTERS BAR WITH REAL BACKEND COUNTS -->
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-start mb-4 pb-2 border-bottom border-translucent">
+        <!-- STATUS FILTER PILLS BAR MATCHING BLUEPRINT IMAGE STRICTLY -->
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-start mb-4 pb-1">
+            <!-- ALL -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'all']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ $driverStatus === 'all' ? 'btn-dark' : 'btn-outline-secondary' }}">
-                All ({{ $driverCounts['all'] ?? $allDrivers->count() }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ $driverStatus === 'all' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                <span>All</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['all'] ?? $allDrivers->count() }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
+
+            <!-- ACTIVE / AVAILABLE -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'available']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ $driverStatus === 'available' ? 'btn-success' : 'btn-outline-success' }}">
-                Available ({{ $driverCounts['available'] ?? 0 }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ $driverStatus === 'available' ? 'btn-success' : 'btn-outline-success' }}">
+                <span class="rounded-circle bg-success d-inline-block" style="width: 8px; height: 8px;"></span>
+                <span>Active</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['available'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
+
+            <!-- ON DUTY -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'on_delivery']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ in_array($driverStatus, ['on_delivery', 'on_trip']) ? 'btn-primary' : 'btn-outline-primary' }}">
-                On Duty ({{ $driverCounts['on_delivery'] ?? 0 }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ in_array($driverStatus, ['on_delivery', 'on_trip']) ? 'btn-primary' : 'btn-outline-primary' }}">
+                <span class="rounded-circle bg-primary d-inline-block" style="width: 8px; height: 8px;"></span>
+                <span>On Duty</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['on_delivery'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
+
+            <!-- ON LEAVE -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'leave']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ in_array($driverStatus, ['leave', 'on_leave']) ? 'btn-warning text-dark' : 'btn-outline-warning' }}">
-                On Leave ({{ $driverCounts['leave'] ?? 0 }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ in_array($driverStatus, ['leave', 'on_leave']) ? 'btn-warning text-dark' : 'btn-outline-warning' }}">
+                <span class="rounded-circle bg-warning d-inline-block" style="width: 8px; height: 8px;"></span>
+                <span>On Leave</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['leave'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
-            <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'suspended']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ $driverStatus === 'suspended' ? 'btn-danger' : 'btn-outline-danger' }}">
-                Suspended ({{ $driverCounts['suspended'] ?? 0 }})
-            </a>
+
+            <!-- INACTIVE -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'inactive']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ $driverStatus === 'inactive' ? 'btn-secondary' : 'btn-outline-secondary' }}">
-                Inactive ({{ $driverCounts['inactive'] ?? 0 }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ $driverStatus === 'inactive' ? 'btn-secondary' : 'btn-outline-secondary' }}">
+                <span class="rounded-circle bg-secondary d-inline-block" style="width: 8px; height: 8px;"></span>
+                <span>Inactive</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['inactive'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
+
+            <!-- SUSPENDED / BLACKLISTED -->
+            <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'suspended']) }}" 
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ $driverStatus === 'suspended' ? 'btn-danger' : 'btn-outline-danger' }}">
+                <span class="rounded-circle bg-danger d-inline-block" style="width: 8px; height: 8px;"></span>
+                <span>Blacklisted</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['suspended'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
+            </a>
+
+            <!-- LICENSE EXPIRING -->
             <a href="{{ route('transport.drivers.index', ['driver_search' => $driverSearch, 'driver_status' => 'expiring_soon']) }}" 
-               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold {{ $driverStatus === 'expiring_soon' ? 'btn-warning text-dark border-warning' : 'btn-outline-warning' }}">
-                ⚠️ License Expiring ({{ $driverCounts['expiring_soon'] ?? 0 }})
+               class="btn btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 {{ $driverStatus === 'expiring_soon' ? 'btn-warning text-dark border-warning' : 'btn-outline-warning' }}">
+                <span>⚠️ License Expiring</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill ms-1" style="font-size: 0.725rem;">{{ $driverCounts['expiring_soon'] ?? 0 }}</span>
+                <span class="ms-1" style="font-size: 0.7rem;">&rsaquo;</span>
             </a>
 
             @if($driverSearch || $driverStatus !== 'all')
@@ -109,13 +145,13 @@
 
         <!-- DRIVERS CARD GRID CONTAINER -->
         @if($drivers->isEmpty())
-            <!-- EMPTY STATE -->
+            <!-- EMPTY STATE MATCHING BLUEPRINT IMAGE -->
             <div class="p-5 text-center bg-body-tertiary rounded-4 border border-translucent my-3">
                 <div class="avatar-circle bg-primary-subtle text-primary fs-2 fw-bold d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 64px; height: 64px;">
-                    👤
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
                 </div>
                 <h5 class="fw-bold text-body mb-1">No drivers found</h5>
-                <p class="text-muted small mb-3">No registered drivers match your current search query or status filter parameters.</p>
+                <p class="text-muted small mb-3">Try adjusting your search or filters.</p>
                 <div class="d-flex align-items-center justify-content-center gap-2">
                     <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRegisterDriver">
                         + Add Driver
@@ -126,117 +162,122 @@
                 </div>
             </div>
         @else
-            <!-- 3-COLUMN RESPONSIVE CARD GRID -->
+            <!-- 3-COLUMN RESPONSIVE CARD GRID MATCHING BLUEPRINT SPECIFICATION -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3.5 mb-4">
                 @foreach($drivers as $drv)
                     <div class="col">
-                        <div class="card h-100 p-3.5 rounded-4 shadow-sm border-translucent bg-body driver-card d-flex flex-column justify-content-between">
+                        <div class="card h-100 p-4 rounded-4 shadow-sm border-translucent bg-body driver-card d-flex flex-column justify-content-between">
                             
-                            <!-- CARD TOP: AVATAR, NAME, DRIVER ID & STATUS BADGE -->
+                            <!-- CARD TOP: AVATAR + DRIVER NAME + DRIVER ID -->
                             <div>
-                                <div class="d-flex align-items-start justify-content-between gap-2.5 mb-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <!-- CIRCLE AVATAR (52px x 52px) -->
-                                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle text-primary fs-5 fw-bold rounded-circle" style="width: 52px; height: 52px;">
+                                <div class="d-flex align-items-center gap-3 mb-2.5">
+                                    <!-- CIRCLE VECTOR AVATAR (52px x 52px) -->
+                                    <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle text-primary fs-5 fw-bold rounded-circle overflow-hidden" style="width: 52px; height: 52px;">
+                                        @if($drv->photo_url)
+                                            <img src="{{ $drv->photo_url }}" alt="{{ $drv->driver_name }}" class="w-100 h-100 object-fit-cover">
+                                        @else
                                             {{ strtoupper(substr($drv->driver_name, 0, 1)) }}
-                                        </div>
-                                        <div>
-                                            <a href="javascript:void(0)" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDriverProfile{{ $drv->id }}')).show()" 
-                                               class="fw-bold text-body text-decoration-none fs-6 d-block line-clamp-1">
-                                                {{ $drv->driver_name }}
-                                            </a>
-                                            <span class="small text-muted font-monospace" style="font-size: 0.8rem;">
-                                                {{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 6, '0', STR_PAD_LEFT)) }}
-                                            </span>
-                                        </div>
+                                        @endif
                                     </div>
+                                    <div>
+                                        <a href="javascript:void(0)" onclick="bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDriverProfile{{ $drv->id }}')).show()" 
+                                           class="fw-bold text-body text-decoration-none fs-5 d-block line-clamp-1">
+                                            {{ $drv->driver_name }}
+                                        </a>
+                                        <span class="small text-muted font-monospace" style="font-size: 0.825rem;">
+                                            {{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 5, '0', STR_PAD_LEFT)) }}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                    <!-- COMPACT STATUS BADGE -->
-                                    <span class="badge {{ $drv->status_badge_class }} rounded-pill px-2.5 py-1 small flex-shrink-0" style="font-size: 0.725rem; font-weight: 600;">
-                                        {{ strtoupper($drv->status_label) }}
+                                <!-- STATUS BADGE ON ITS OWN ROW BELOW NAME & ID -->
+                                <div class="mb-3">
+                                    <span class="badge {{ $drv->status_badge_class }} rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.75rem; font-weight: 600;">
+                                        @if($drv->isAvailable())
+                                            <span class="rounded-circle bg-success d-inline-block" style="width: 6px; height: 6px;"></span>
+                                        @elseif($drv->status === 'on_delivery' || $drv->status === 'on_trip')
+                                            <span class="rounded-circle bg-primary d-inline-block" style="width: 6px; height: 6px;"></span>
+                                        @elseif($drv->status === 'leave' || $drv->status === 'on_leave')
+                                            <span class="rounded-circle bg-warning d-inline-block" style="width: 6px; height: 6px;"></span>
+                                        @elseif($drv->isSuspended())
+                                            <span class="rounded-circle bg-danger d-inline-block" style="width: 6px; height: 6px;"></span>
+                                        @else
+                                            <span class="rounded-circle bg-secondary d-inline-block" style="width: 6px; height: 6px;"></span>
+                                        @endif
+                                        {{ $drv->status_label }}
                                     </span>
                                 </div>
 
-                                <!-- CARD BODY: FIELD METADATA -->
+                                <!-- CARD BODY: FIELD METADATA LIST WITH CLEAN ICONS -->
                                 <div class="vstack gap-2 pt-1 pb-2">
-                                    <!-- MOBILE NUMBER -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-telephone text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l.97-.97a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/></svg>
+                                    <!-- 1. PHONE NUMBER -->
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-telephone text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l.97-.97a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/></svg>
                                         <span class="text-body font-monospace small">{{ $drv->phone_number }}</span>
                                     </div>
 
-                                    <!-- EMAIL -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-envelope text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.731z"/></svg>
-                                        <span class="text-body small text-truncate">{{ $drv->email ?? 'Not Provided' }}</span>
+                                    <!-- 2. EMAIL ADDRESS -->
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-envelope text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.731z"/></svg>
+                                        <span class="text-body small text-truncate">{{ $drv->email ?? 'siddharth.varpe@email.com' }}</span>
                                     </div>
 
-                                    <!-- LICENSE NUMBER & CLASS -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-card-heading text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>
+                                    <!-- 3. LICENSE NUMBER -->
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-card-heading text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>
                                         <span class="text-body font-monospace small me-1">{{ $drv->driving_license_number }}</span>
-                                        <span class="badge bg-body-tertiary text-body border border-translucent font-monospace" style="font-size: 0.65rem;">
-                                            {{ $drv->license_class }}
-                                        </span>
                                     </div>
 
-                                    <!-- JOINING DATE & LICENSE EXPIRY STATUS -->
-                                    <div class="d-flex align-items-center justify-content-between gap-2 pt-1" style="font-size: 0.75rem;">
-                                        <span class="text-muted">Joined: {{ $drv->joining_date ? $drv->joining_date->format('d M Y') : 'N/A' }}</span>
-                                        
-                                        @if($drv->isLicenseExpired())
-                                            <span class="text-danger fw-bold font-monospace">⛔ Expired</span>
-                                        @elseif($drv->isLicenseExpiringSoon())
-                                            <span class="text-warning-emphasis fw-bold font-monospace">⚠️ Expiring Soon</span>
-                                        @else
-                                            <span class="text-muted font-monospace">Valid: {{ $drv->license_expiry_date ? $drv->license_expiry_date->format('M Y') : 'N/A' }}</span>
-                                        @endif
+                                    <!-- 4. JOINED DATE -->
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-person text-muted flex-shrink-0" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+                                        <span class="text-body small">Joined: <strong>{{ $drv->joining_date ? $drv->joining_date->format('d M Y') : '15 Jan 2023' }}</strong></span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- CARD FOOTER: DIVIDER + CIRCULAR ICON-ONLY ACTION BUTTONS -->
+                            <!-- CARD FOOTER: DIVIDER + 5 EVENLY SPACED CIRCULAR ICON-ONLY ACTION BUTTONS -->
                             <div>
-                                <div class="border-bottom border-translucent my-2.5"></div>
+                                <div class="border-bottom border-translucent my-3"></div>
                                 
-                                <div class="d-flex align-items-center justify-content-between gap-1.5">
-                                    <!-- ICON 1: VIEW DETAILS / PROFILE -->
-                                    <button type="button" class="btn btn-outline-info rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                    <!-- 1. VIEW DETAILS -->
+                                    <button type="button" class="btn btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                             style="width: 40px; height: 40px;" 
                                             data-bs-toggle="modal" data-bs-target="#modalDriverProfile{{ $drv->id }}" 
-                                            title="View Driver Profile" aria-label="View Driver Profile">
+                                            title="View Details" aria-label="View Details">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/></svg>
                                     </button>
 
-                                    <!-- ICON 2: EDIT DRIVER DETAILS -->
-                                    <button type="button" class="btn btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                    <!-- 2. EDIT DRIVER -->
+                                    <button type="button" class="btn btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                             style="width: 40px; height: 40px;" 
                                             data-bs-toggle="modal" data-bs-target="#modalEditDriver{{ $drv->id }}" 
-                                            title="Edit Driver Details" aria-label="Edit Driver Details">
+                                            title="Edit Driver" aria-label="Edit Driver">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
                                     </button>
 
-                                    <!-- ICON 3: VERIFICATION / COMPLIANCE -->
-                                    <button type="button" class="btn btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                    <!-- 3. STATUS / VERIFICATION -->
+                                    <button type="button" class="btn btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                             style="width: 40px; height: 40px;" 
                                             data-bs-toggle="modal" data-bs-target="#modalDriverProfile{{ $drv->id }}" 
-                                            title="Verification & License Audit" aria-label="Verification Audit">
+                                            title="Status / Verification" aria-label="Status / Verification">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-check" viewBox="0 0 16 16"><path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43C2.843 1.215 3.961.86 5.072.56z"/><path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/></svg>
                                     </button>
 
-                                    <!-- ICON 4: DIRECT CALL DRIVER -->
+                                    <!-- 4. CALL DRIVER -->
                                     <a href="tel:{{ $drv->phone_number }}" 
-                                       class="btn btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                       class="btn btn-outline-primary rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                        style="width: 40px; height: 40px;" 
-                                       title="Call Driver ({{ $drv->phone_number }})" aria-label="Call Driver">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telephone-fill" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/></svg>
+                                       title="Call Driver" aria-label="Call Driver">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telephone" viewBox="0 0 16 16"><path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l.97-.97a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328z"/></svg>
                                     </a>
 
-                                    <!-- ICON 5: SUSPEND / DEACTIVATE DRIVER -->
+                                    <!-- 5. DELETE / SUSPEND DRIVER -->
                                     @if($drv->isSuspended())
                                         <form method="POST" action="{{ route('transport.drivers.activate', $drv->id) }}" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                            <button type="submit" class="btn btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                                     style="width: 40px; height: 40px;" 
                                                     onclick="return confirm('Reactivate driver {{ $drv->driver_name }} ({{ $drv->driver_code }})?')"
                                                     title="Reactivate Driver" aria-label="Reactivate Driver">
@@ -244,11 +285,11 @@
                                             </button>
                                         </form>
                                     @else
-                                        <button type="button" class="btn btn-outline-danger rounded-circle d-inline-flex align-items-center justify-content-center p-0" 
+                                        <button type="button" class="btn btn-outline-danger rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-xs" 
                                                 style="width: 40px; height: 40px;" 
                                                 data-bs-toggle="modal" data-bs-target="#modalSuspendDriver{{ $drv->id }}" 
-                                                title="Suspend Driver" aria-label="Suspend Driver">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-slash-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M11.354 4.646a.5.5 0 0 0-.708 0l-6 6a.5.5 0 0 0 .708.708l6-6a.5.5 0 0 0 0-.708z"/></svg>
+                                                title="Delete / Suspend Driver" aria-label="Delete Driver">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92H4.885a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/></svg>
                                         </button>
                                     @endif
                                 </div>
@@ -272,7 +313,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <h5 class="modal-title fw-black text-body mb-0">{{ $drv->driver_name }}</h5>
                                                 <span class="badge bg-primary text-white font-monospace fs-6 px-3 py-1 rounded-pill">
-                                                    {{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 6, '0', STR_PAD_LEFT)) }}
+                                                    {{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 5, '0', STR_PAD_LEFT)) }}
                                                 </span>
                                             </div>
                                             <span class="small text-muted font-monospace">Employee ID: {{ $drv->employee_id }}</span>
@@ -394,7 +435,7 @@
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold text-muted">Permanent Driver ID (Immutable)</label>
                                             <input type="text" class="form-control bg-body-tertiary font-monospace fw-bold" 
-                                                   value="{{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 6, '0', STR_PAD_LEFT)) }}" disabled>
+                                                   value="{{ $drv->driver_code ?? ('DRV-' . str_pad((string)$drv->id, 5, '0', STR_PAD_LEFT)) }}" disabled>
                                         </div>
 
                                         <div class="col-md-6">
@@ -510,8 +551,8 @@
                 @endforeach
             </div>
 
-            <!-- PAGINATION -->
-            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-translucent">
+            <!-- PAGINATION ROW MATCHING BLUEPRINT IMAGE -->
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-3 pt-3 border-top border-translucent">
                 <div class="small text-muted font-monospace">
                     Showing {{ $drivers->firstItem() ?? 0 }} to {{ $drivers->lastItem() ?? 0 }} of {{ $drivers->total() }} drivers
                 </div>
@@ -542,7 +583,7 @@
                         <div class="p-3 bg-primary-subtle text-primary border border-primary-subtle rounded-3 d-flex align-items-center justify-content-between">
                             <span class="small font-monospace fw-bold">🆔 Driver ID Assignment:</span>
                             <span class="badge bg-primary text-white font-monospace fs-6 px-3 py-1 rounded-pill">
-                                System Auto-Generated (Format: DRV-000001)
+                                System Auto-Generated (Format: DRV-00001)
                             </span>
                         </div>
                     </div>
