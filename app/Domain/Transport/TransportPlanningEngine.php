@@ -324,7 +324,7 @@ class TransportPlanningEngine
                 throw new InvalidArgumentException("Cannot assign driver and vehicle to Transport Task #{$task->request_number} because it has already been dispatched.");
             }
 
-            if ($task->status !== 'ready_for_assignment') {
+            if (!in_array($task->status, ['ready_for_assignment', 'waiting_planning'])) {
                 throw new InvalidArgumentException("Cannot assign driver and vehicle to Transport Task #{$task->request_number} because its status is '{$task->status_label}'. Only orders in 'Ready for Assignment' status can be assigned.");
             }
 
