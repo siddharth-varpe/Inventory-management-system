@@ -29,12 +29,12 @@ class WidgetRegistry
     /**
      * Get all registered widgets evaluated against the user's roles and permissions.
      */
-    public static function getEligibleWidgets(User $user, string $portal = 'all'): array
+    public static function getEligibleWidgets(?User $user = null, string $portal = 'all'): array
     {
         self::ensureDefaults();
 
         $eligible = [];
-        $userRoles = $user->roles->pluck('name')->toArray();
+        $userRoles = $user ? $user->roles->pluck('name')->toArray() : [];
 
         foreach (self::$registeredWidgets as $id => $widget) {
             // Portal filter check
