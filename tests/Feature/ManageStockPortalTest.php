@@ -19,7 +19,7 @@ class ManageStockPortalTest extends TestCase
 
     protected User $user;
 
-    protected void setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();

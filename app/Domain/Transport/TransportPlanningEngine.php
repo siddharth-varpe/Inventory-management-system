@@ -25,7 +25,11 @@ class TransportPlanningEngine
             // Lock task row for concurrency safety
             $task = TransportRequest::where('id', $task->id)->lockForUpdate()->firstOrFail();
 
-            // Prevent assignment if task not in planning queue
+            // Prevent assignment if task is awaiting warehouse completion or cancelled
+            if ($task->status === 'awaiting_warehouse') {
+                throw new InvalidArgumentException("Transport Task #{$task->request_number} is AWAITING WAREHOUSE completion (Order #{$task->order_reference}). Vehicle & Driver assignments are locked until Organize Stock completes Pick & Pack and seals the shipment.");
+            }
+
             if (in_array($task->status, ['dispatched', 'out_for_delivery', 'delivered', 'completed', 'cancelled'])) {
                 throw new InvalidArgumentException("Cannot assign vehicle to Transport Task #{$task->request_number} because it has already progressed past planning (Status: {$task->status_label}).");
             }
@@ -90,6 +94,10 @@ class TransportPlanningEngine
         return DB::transaction(function () use ($task, $driverId, $operatorId) {
             // Lock task row
             $task = TransportRequest::where('id', $task->id)->lockForUpdate()->firstOrFail();
+
+            if ($task->status === 'awaiting_warehouse') {
+                throw new InvalidArgumentException("Transport Task #{$task->request_number} is AWAITING WAREHOUSE completion (Order #{$task->order_reference}). Vehicle & Driver assignments are locked until Organize Stock completes Pick & Pack and seals the shipment.");
+            }
 
             if (in_array($task->status, ['dispatched', 'out_for_delivery', 'delivered', 'completed', 'cancelled'])) {
                 throw new InvalidArgumentException("Cannot assign driver to Transport Task #{$task->request_number} because it has already progressed past planning.");

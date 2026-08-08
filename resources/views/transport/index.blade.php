@@ -50,11 +50,14 @@
                 <a href="{{ route('transport.index', ['tab' => 'dashboard']) }}" class="btn btn-sm rounded-pill px-3.5 py-2 fw-bold {{ $activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline-secondary' }}">
                     📊 1. Transport Dashboard
                 </a>
+                <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm rounded-pill px-3.5 py-2 fw-bold {{ $activeTab === 'delivery-orders' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                    📦 Delivery Orders ({{ $requests->count() }})
+                </a>
                 <a href="{{ route('transport.index', ['tab' => 'drivers']) }}" class="btn btn-sm rounded-pill px-3.5 py-2 fw-bold {{ $activeTab === 'drivers' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                    👤 2. Driver Management ({{ $allDrivers->count() }})
+                    👤 Driver Management ({{ $allDrivers->count() }})
                 </a>
                 <a href="{{ route('transport.index', ['tab' => 'vehicles']) }}" class="btn btn-sm rounded-pill px-3.5 py-2 fw-bold {{ $activeTab === 'vehicles' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                    🚛 3. Vehicle Management ({{ $allVehicles->count() }})
+                    🚛 Vehicle Management ({{ $allVehicles->count() }})
                 </a>
                 <a href="{{ route('transport.index', ['tab' => 'trips']) }}" class="btn btn-sm rounded-pill px-3.5 py-2 fw-bold {{ $activeTab === 'trips' ? 'btn-primary' : 'btn-outline-secondary' }}">
                     🗺 4. Trip Management
@@ -165,6 +168,13 @@
                 </div>
             </div>
         </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- WORKSPACE: DELIVERY ORDERS (PHASE 3 DELIVERY ORDERS & WAREHOUSE SYNC) -->
+    <!-- ========================================================================= -->
+    @if($activeTab === 'delivery-orders')
+        @include('transport.partials.delivery-orders')
     @endif
 
     <!-- ========================================================================= -->

@@ -8,6 +8,7 @@ use App\Models\SalesOrder;
 use App\Models\Quotation;
 use App\Models\Customer;
 use App\Models\Warehouse;
+use App\Domain\Transport\TransportManagementEngine;
 use Illuminate\Support\Facades\DB;
 
 class SalesOrderService
@@ -15,7 +16,8 @@ class SalesOrderService
     public function __construct(
         protected ReservationEngine $reservationEngine,
         protected SendGoodsConnector $sendGoodsConnector,
-        protected QuotationService $quotationService
+        protected QuotationService $quotationService,
+        protected TransportManagementEngine $transportEngine
     ) {}
 
     /**
@@ -129,6 +131,9 @@ class SalesOrderService
                 'status' => 'cancelled',
                 'internal_notes' => ($order->internal_notes ? $order->internal_notes . "\n" : '') . "Cancellation Reason: " . $reason,
             ]);
+
+            // Synchronize Order Cancellation to Transport Department
+            $this->transportEngine->syncOrderCancellation($order, $reason);
 
             return $order;
         });

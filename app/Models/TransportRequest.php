@@ -30,6 +30,7 @@ class TransportRequest extends Model
         'dimensions',
         'warehouse_completed_at',
         'source_module',
+        'warehouse_status',
         'status',
         'driver_status',
         'delivery_notes',
@@ -138,6 +139,8 @@ class TransportRequest extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
+            'awaiting_warehouse' => 'Awaiting Warehouse',
+            'ready_for_assignment' => 'Ready for Assignment',
             'waiting_planning', 'pending_packaging' => 'Waiting Planning',
             'vehicle_assigned_pending' => 'Vehicle Assigned',
             'driver_assigned_pending' => 'Driver Assigned',
@@ -149,14 +152,17 @@ class TransportRequest extends Model
             'delivered', 'completed' => 'Delivered',
             'returned_to_warehouse' => 'Returned To Warehouse',
             'delivery_failed' => 'Delivery Failed',
-            default => 'Waiting Planning',
+            'cancelled' => 'Cancelled',
+            default => 'Awaiting Warehouse',
         };
     }
 
     public function getStatusBadgeClassAttribute(): string
     {
         return match($this->status) {
-            'waiting_planning', 'pending_packaging' => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
+            'awaiting_warehouse' => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
+            'ready_for_assignment' => 'bg-success-subtle text-success border-success-subtle',
+            'waiting_planning', 'pending_packaging' => 'bg-info-subtle text-info border-info-subtle',
             'vehicle_assigned_pending' => 'bg-info-subtle text-info border-info-subtle',
             'driver_assigned_pending' => 'bg-primary-subtle text-primary border-primary-subtle',
             'planning_in_progress' => 'bg-indigo-subtle text-indigo border-indigo-subtle',
@@ -165,7 +171,35 @@ class TransportRequest extends Model
             'ready_for_dispatch' => 'bg-primary-subtle text-primary border-primary-subtle',
             'in_transit', 'dispatched', 'out_for_delivery' => 'bg-success-subtle text-success border-success-subtle',
             'delivered', 'completed' => 'bg-secondary-subtle text-secondary border-secondary-subtle',
-            'returned_to_warehouse', 'delivery_failed' => 'bg-danger-subtle text-danger border-danger-subtle',
+            'returned_to_warehouse', 'delivery_failed', 'cancelled' => 'bg-danger-subtle text-danger border-danger-subtle',
+            default => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
+        };
+    }
+
+    public function getWarehouseStatusLabelAttribute(): string
+    {
+        if ($this->warehouse_completed_at || in_array($this->status, ['ready_for_assignment', 'ready_for_dispatch', 'in_transit', 'dispatched', 'delivered', 'completed'])) {
+            return 'Seal & Ready to Dispatch';
+        }
+
+        return match($this->warehouse_status ?? 'picking_in_progress') {
+            'pending', 'picking', 'picking_in_progress' => 'Picking & Packing In Progress',
+            'picked', 'packed' => 'Packed',
+            'seal_ready', 'ready_for_dispatch', 'completed' => 'Seal & Ready to Dispatch',
+            default => 'Picking & Packing In Progress',
+        };
+    }
+
+    public function getWarehouseStatusBadgeClassAttribute(): string
+    {
+        if ($this->warehouse_completed_at || in_array($this->status, ['ready_for_assignment', 'ready_for_dispatch', 'in_transit', 'dispatched', 'delivered', 'completed'])) {
+            return 'bg-success-subtle text-success border-success-subtle';
+        }
+
+        return match($this->warehouse_status ?? 'picking_in_progress') {
+            'pending', 'picking', 'picking_in_progress' => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
+            'picked', 'packed' => 'bg-info-subtle text-info border-info-subtle',
+            'seal_ready', 'ready_for_dispatch', 'completed' => 'bg-success-subtle text-success border-success-subtle',
             default => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
         };
     }
@@ -197,4 +231,98 @@ class TransportRequest extends Model
             default => 'bg-secondary-subtle text-secondary border-secondary-subtle',
         };
     }
+
+    public function getTimelineEventsAttribute(): array
+    {
+        $events = [];
+
+        // 1. Sales Order Created
+        if ($this->salesOrder) {
+            $events[] = [
+                'title' => 'Sales Order Created',
+                'description' => "Order #{$this->order_reference} created in CRM",
+                'timestamp' => $this->salesOrder->created_at?->format('Y-m-d H:i:s') ?? $this->created_at->format('Y-m-d H:i:s'),
+                'icon' => '🛒',
+                'status' => 'completed',
+            ];
+        }
+
+        // 2. Transport Task Created
+        $events[] = [
+            'title' => 'Transport Task Created',
+            'description' => "Task #{$this->request_number} linked (Awaiting Warehouse)",
+            'timestamp' => $this->created_at->format('Y-m-d H:i:s'),
+            'icon' => '📦',
+            'status' => 'completed',
+        ];
+
+        // 3. Warehouse Pick & Pack
+        if ($this->warehouse_completed_at || in_array($this->status, ['ready_for_assignment', 'ready_for_dispatch', 'in_transit', 'dispatched', 'delivered', 'completed'])) {
+            $events[] = [
+                'title' => 'Pick & Pack Completed',
+                'description' => 'Warehouse items picked and verified',
+                'timestamp' => $this->warehouse_completed_at?->format('Y-m-d H:i:s') ?? $this->created_at->addMinutes(15)->format('Y-m-d H:i:s'),
+                'icon' => '🏭',
+                'status' => 'completed',
+            ];
+            $events[] = [
+                'title' => 'Seal & Ready to Dispatch',
+                'description' => 'Order sealed and marked ready in Organize Stock',
+                'timestamp' => $this->warehouse_completed_at?->format('Y-m-d H:i:s') ?? $this->created_at->addMinutes(20)->format('Y-m-d H:i:s'),
+                'icon' => '🔒',
+                'status' => 'completed',
+            ];
+            $events[] = [
+                'title' => 'Ready for Assignment',
+                'description' => 'Transport status automatically transitioned to Ready for Assignment',
+                'timestamp' => $this->warehouse_completed_at?->format('Y-m-d H:i:s') ?? $this->updated_at->format('Y-m-d H:i:s'),
+                'icon' => '✅',
+                'status' => 'completed',
+            ];
+        } else {
+            $events[] = [
+                'title' => 'Awaiting Warehouse Completion',
+                'description' => 'Organize Stock is performing Pick & Pack',
+                'timestamp' => null,
+                'icon' => '⏳',
+                'status' => 'pending',
+            ];
+        }
+
+        // 4. Dispatched Event
+        if ($this->dispatched_at) {
+            $events[] = [
+                'title' => 'Shipment Dispatched',
+                'description' => "Dispatched via Trip #{$this->transportTrip?->trip_number}",
+                'timestamp' => $this->dispatched_at->format('Y-m-d H:i:s'),
+                'icon' => '🚀',
+                'status' => 'completed',
+            ];
+        }
+
+        // 5. Delivered Event
+        if ($this->delivered_at) {
+            $events[] = [
+                'title' => 'Shipment Delivered',
+                'description' => 'Goods successfully delivered to customer',
+                'timestamp' => $this->delivered_at->format('Y-m-d H:i:s'),
+                'icon' => '🎉',
+                'status' => 'completed',
+            ];
+        }
+
+        // 6. Cancelled Event
+        if ($this->status === 'cancelled') {
+            $events[] = [
+                'title' => 'Transport Task Cancelled',
+                'description' => $this->delivery_failure_reason ?? 'Order cancelled',
+                'timestamp' => $this->updated_at->format('Y-m-d H:i:s'),
+                'icon' => '❌',
+                'status' => 'cancelled',
+            ];
+        }
+
+        return $events;
+    }
+
 }

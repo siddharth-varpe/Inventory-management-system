@@ -40,6 +40,10 @@ Route::middleware(['auth', 'verified'])->prefix('transport')->name('transport.')
     Route::post('/vehicles/{vehicle}/breakdown', [TransportController::class, 'markVehicleBreakdown'])->name('vehicles.breakdown');
     Route::post('/vehicles/{vehicle}/recover-breakdown', [TransportController::class, 'recoverVehicleBreakdown'])->name('vehicles.recover-breakdown');
 
+    // Dedicated Delivery Orders Endpoints (Phase 3)
+    Route::get('/delivery-orders', [TransportController::class, 'indexDeliveryOrders'])->name('delivery-orders.index');
+    Route::get('/delivery-orders/{deliveryOrder}', [TransportController::class, 'showDeliveryOrder'])->name('delivery-orders.show');
+
     // Operational Workflow Endpoints
     Route::post('/{transportRequest}/assign-vehicle', [TransportController::class, 'assignVehicle'])->name('assign-vehicle');
     Route::post('/{transportRequest}/assign-driver', [TransportController::class, 'assignDriver'])->name('assign-driver');

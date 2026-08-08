@@ -131,7 +131,18 @@ class TransportController extends Controller
             'dispatchManifest', 'dispatchChecklist', 'acceptedByUser', 'creator', 'deliveryTimelines'
         ]);
 
-        if ($status && $status !== 'all') {
+        $queue = $request->get('queue');
+
+        if ($activeTab === 'delivery-orders' && $queue) {
+            match($queue) {
+                'awaiting_warehouse' => $query->where('status', 'awaiting_warehouse'),
+                'ready_for_assignment' => $query->whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed']),
+                'in_transit' => $query->whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery']),
+                'completed' => $query->whereIn('status', ['delivered', 'completed']),
+                'cancelled' => $query->where('status', 'cancelled'),
+                default => null,
+            };
+        } else if ($status && $status !== 'all') {
             match($status) {
                 'waiting_planning' => $query->whereIn('status', ['waiting_planning', 'pending_packaging']),
                 'planning_completed' => $query->where('status', 'planning_completed'),
@@ -175,11 +186,17 @@ class TransportController extends Controller
             });
         }
 
-        $requests = $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'normal', 'medium', 'low')")
-                          ->orderByRaw("COALESCE(required_dispatch_date, expected_delivery_date, created_at) ASC")
-                          ->orderByRaw("COALESCE(warehouse_completed_at, created_at) ASC")
-                          ->paginate(15)
-                          ->withQueryString();
+        if (config('database.default') === 'sqlite') {
+            $requests = $query->orderBy('id', 'desc')
+                              ->paginate(15)
+                              ->withQueryString();
+        } else {
+            $requests = $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'normal', 'medium', 'low')")
+                              ->orderByRaw("COALESCE(required_dispatch_date, expected_delivery_date, created_at) ASC")
+                              ->orderByRaw("COALESCE(warehouse_completed_at, created_at) ASC")
+                              ->paginate(15)
+                              ->withQueryString();
+        }
 
         $availableVehicles = Vehicle::where('status', 'available')
                                     ->where(function ($q) {
@@ -725,6 +742,48 @@ class TransportController extends Controller
             'pending_closure' => $pendingClosureCount,
             'count' => count($tasks),
             'tasks' => $tasks,
+        ]);
+    }
+
+    /**
+     * Dedicated Phase 3 Delivery Orders Workspace
+     */
+    public function indexDeliveryOrders(Request $request)
+    {
+        $request->merge(['tab' => 'delivery-orders']);
+        return $this->index($request);
+    }
+
+    /**
+     * Dedicated Phase 3 Delivery Order Profile Endpoint (JSON)
+     */
+    public function showDeliveryOrder(TransportRequest $deliveryOrder): JsonResponse
+    {
+        $deliveryOrder->load(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip']);
+
+        return response()->json([
+            'id' => $deliveryOrder->id,
+            'request_number' => $deliveryOrder->request_number,
+            'order_reference' => $deliveryOrder->order_reference,
+            'customer_name' => $deliveryOrder->customer_name,
+            'delivery_address' => $deliveryOrder->delivery_address,
+            'delivery_city' => $deliveryOrder->city,
+            'phone_number' => $deliveryOrder->phone_number,
+            'priority' => $deliveryOrder->priority,
+            'priority_badge_class' => $deliveryOrder->priority_badge_class,
+            'expected_delivery_date' => $deliveryOrder->expected_delivery_date?->format('Y-m-d'),
+            'package_count' => $deliveryOrder->package_count,
+            'weight_kg' => $deliveryOrder->weight_kg,
+            'source_module' => $deliveryOrder->source_module ?? 'CRM Sales Order',
+            'status' => $deliveryOrder->status,
+            'status_label' => $deliveryOrder->status_label,
+            'status_badge_class' => $deliveryOrder->status_badge_class,
+            'warehouse_status_label' => $deliveryOrder->warehouse_status_label,
+            'warehouse_status_badge_class' => $deliveryOrder->warehouse_status_badge_class,
+            'warehouse_completed_at' => $deliveryOrder->warehouse_completed_at?->format('H:i, d M Y'),
+            'driver_name' => $deliveryOrder->driver_name ?? $deliveryOrder->driver?->driver_name,
+            'vehicle_number' => $deliveryOrder->vehicle_number ?? $deliveryOrder->vehicle?->vehicle_number,
+            'timeline' => $deliveryOrder->timeline_events,
         ]);
     }
 }
