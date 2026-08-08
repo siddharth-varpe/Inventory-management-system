@@ -61,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =========================================================================
     // Manage Stock Operational Portal (Single Entry Product Catalog Workspace)
     // =========================================================================
-    Route::get('/stock', [ProductController::class, 'index'])->name('stock.dashboard');
+    Route::get('/stock', \App\Http\Controllers\StockDashboardController::class)->name('stock.dashboard');
     Route::get('/stock/catalog', [ProductController::class, 'index'])->name('stock.catalog');
     
     // Product Management Actions

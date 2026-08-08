@@ -232,7 +232,7 @@ class ProductService extends BaseService implements ProductServiceInterface
     {
         return DB::transaction(function () use ($data) {
             /** @var Product $product */
-            $product = $this->getById($data['product_id']);
+            $product = Product::lockForUpdate()->findOrFail($data['product_id']);
 
             $qty = (int) $data['quantity'];
             $unitCost = (float) $data['unit_cost'];
@@ -271,7 +271,7 @@ class ProductService extends BaseService implements ProductServiceInterface
             ]);
 
             // 3. Recalculate Weighted Average Cost & Increase Physical Stock
-            $currentStock = $product->physical_stock;
+            $currentStock = (int) $product->physical_stock;
             $currentCost = (float) $product->cost_price;
             $newStock = $currentStock + $qty;
 

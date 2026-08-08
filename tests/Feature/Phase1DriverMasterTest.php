@@ -162,8 +162,9 @@ class Phase1DriverMasterTest extends TestCase
     }
 
     /** @test */
-    public function test_driver_master_search_and_filters_via_controller()
+    public function test_driver_master_search_and_filters_via_controller(): void
     {
+        $this->actingAs($this->user);
         $d1 = $this->manager->registerDriver([
             'driver_name' => 'Special Search Name',
             'phone_number' => '9444455555',

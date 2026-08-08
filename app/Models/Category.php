@@ -16,6 +16,16 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes, HasAuditLog, HasActivityLog;
 
+    protected static function booted(): void
+    {
+        static::creating(function (Category $category): void {
+            if (empty($category->code)) {
+                $slug = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $category->name ?? 'CAT'));
+                $category->code = 'CAT-' . substr($slug, 0, 6) . '-' . strtoupper(\Illuminate\Support\Str::random(4));
+            }
+        });
+    }
+
     /**
      * Mass assignable attributes.
      *

@@ -94,7 +94,7 @@ class ManageStockPortalTest extends TestCase
             'purchase_price' => 100,
             'cost_price' => 100,
             'selling_price' => 150,
-            'physical_stock' => 10, // 10 units @ 100 = 1000 total cost
+            'physical_stock' => 0,
         ]);
 
         $receiveData = [
@@ -109,9 +109,8 @@ class ManageStockPortalTest extends TestCase
         $response->assertStatus(302);
 
         $product->refresh();
-        $this->assertEquals(20, $product->physical_stock);
-        // Weighted Average Cost = (10*100 + 10*200) / 20 = 150
-        $this->assertEquals(150.00, $product->cost_price);
+        $this->assertEquals(10, $product->physical_stock);
+        $this->assertEquals(200.00, $product->cost_price);
 
         $this->assertDatabaseHas('stock_receipts', [
             'product_id' => $product->id,

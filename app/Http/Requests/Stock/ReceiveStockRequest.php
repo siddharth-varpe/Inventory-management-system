@@ -31,8 +31,8 @@ class ReceiveStockRequest extends FormRequest
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'batch_number' => ['nullable', 'string', 'max:100'],
             'mfg_date' => ['nullable', 'date'],
-            'storage_condition' => ['required', 'string', 'max:255'],
-            'qc_status' => ['required', 'string', 'max:255'],
+            'storage_condition' => ['nullable', 'string', 'max:255'],
+            'qc_status' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ];
     }

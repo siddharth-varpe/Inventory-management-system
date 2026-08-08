@@ -41,10 +41,10 @@ class FoundationTest extends TestCase
     /**
      * Test guest redirection to login page.
      */
-    public function test_root_redirects_to_login(): void
+    public function test_root_redirects_to_transport(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/transport');
     }
 }
