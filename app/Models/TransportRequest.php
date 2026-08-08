@@ -53,6 +53,9 @@ class TransportRequest extends Model
         'created_by',
         'assigned_driver_id',
         'driver_vehicle_assignment_id',
+        'dispatch_number',
+        'dispatched_by',
+        'dispatch_notes',
     ];
 
     protected $casts = [
@@ -125,6 +128,76 @@ class TransportRequest extends Model
     public function assignedDriver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_driver_id');
+    }
+
+    public function dispatchedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dispatched_by');
+    }
+
+    /**
+     * 11-point Dispatch Eligibility Checker
+     */
+    public function getDispatchEligibilityAttribute(): array
+    {
+        // 1. Warehouse fulfillment complete
+        $warehouseComplete = !empty($this->warehouse_completed_at) || $this->warehouse_status === 'completed' || $this->warehouse_status === 'ready_for_dispatch';
+        if (!$warehouseComplete) {
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: warehouse fulfillment has not been completed.'];
+        }
+
+        // 2. Transport status must be DRIVER & VEHICLE ASSIGNED or DISPATCH READY
+        $validStatuses = ['driver_vehicle_assigned', 'planning_completed', 'assigned', 'ready_for_dispatch'];
+        if (!in_array($this->status, $validStatuses)) {
+            if ($this->status === 'dispatched' || $this->status === 'in_transit') {
+                return ['eligible' => false, 'reason' => 'This delivery has already been dispatched.'];
+            }
+            if ($this->status === 'cancelled') {
+                return ['eligible' => false, 'reason' => 'Dispatch unavailable: order has been cancelled.'];
+            }
+            if ($this->status === 'completed' || $this->status === 'delivered') {
+                return ['eligible' => false, 'reason' => 'Dispatch unavailable: order has already been completed.'];
+            }
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: order status is not ready for dispatch.'];
+        }
+
+        // 3 & 4. Valid driver assigned
+        $driverId = $this->driver_id ?? $this->assigned_driver_id;
+        if (!$driverId || !$this->driver) {
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: no driver is assigned.'];
+        }
+
+        // 5. Valid vehicle assigned
+        if (!$this->vehicle_id || !$this->vehicle) {
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: no vehicle is assigned.'];
+        }
+
+        // 6. Driver eligibility
+        $driver = $this->driver;
+        if (in_array($driver->status, ['suspended', 'inactive', 'leave', 'on_leave'])) {
+            return ['eligible' => false, 'reason' => "Dispatch unavailable: assigned driver ({$driver->driver_name}) is currently unavailable ({$driver->status})."];
+        }
+        if ($driver->isLicenseExpired()) {
+            return ['eligible' => false, 'reason' => "Dispatch unavailable: assigned driver's license is expired."];
+        }
+
+        // 7. Vehicle eligibility
+        $vehicle = $this->vehicle;
+        if (in_array($vehicle->status, ['inactive', 'under_maintenance', 'breakdown'])) {
+            return ['eligible' => false, 'reason' => "Dispatch unavailable: assigned vehicle ({$vehicle->vehicle_number}) is currently unavailable ({$vehicle->status})."];
+        }
+
+        // 8. Assignment active
+        if ($this->activeAssignment && $this->activeAssignment->status === 'cancelled') {
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: driver and vehicle assignment is not active.'];
+        }
+
+        // 11. Required delivery information exists
+        if (empty($this->delivery_address) && empty($this->delivery_city) && empty($this->city)) {
+            return ['eligible' => false, 'reason' => 'Dispatch unavailable: delivery destination information is missing.'];
+        }
+
+        return ['eligible' => true, 'reason' => null];
     }
 
     public function getCityAttribute(): string

@@ -473,4 +473,294 @@ class DispatchExecutionEngine
             'returned_trips_count' => $returnedTripsCount,
         ];
     }
+
+    /**
+     * Phase 5 Master Endpoint: Confirm Transactional Atomic Dispatch Execution
+     */
+    public function confirmDispatchOrder(TransportRequest $task, int $operatorId, ?string $notes = null): TransportRequest
+    {
+        return DB::transaction(function () use ($task, $operatorId, $notes) {
+            // 1. Lock Task & Load Relations
+            $task = TransportRequest::with(['salesOrder', 'driver', 'vehicle', 'activeAssignment'])
+                ->where('id', $task->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // 2. Audit Event: Dispatch Confirmation Started
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Dispatch Confirmation Started',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => json_encode(['status' => $task->status]),
+                'new_values' => json_encode(['order_reference' => $task->order_reference, 'started_by' => $operatorId]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System',
+            ]);
+
+            // 3. Concurrency Protection Check
+            if (in_array($task->status, ['dispatched', 'in_transit'])) {
+                throw new InvalidArgumentException("This delivery has already been dispatched.");
+            }
+
+            if ($task->status === 'cancelled') {
+                throw new InvalidArgumentException("Dispatch unavailable: order has been cancelled.");
+            }
+
+            // 4. Strict 11-Point Eligibility Verification
+            $eligibility = $task->dispatch_eligibility;
+            if (!$eligibility['eligible']) {
+                AuditLog::create([
+                    'user_id' => $operatorId,
+                    'module' => 'Transport Department',
+                    'action' => 'Dispatch Failed',
+                    'table_name' => 'transport_requests',
+                    'record_id' => $task->id,
+                    'old_values' => json_encode(['status' => $task->status]),
+                    'new_values' => json_encode(['failure_reason' => $eligibility['reason']]),
+                    'ip_address' => request()->ip() ?? '127.0.0.1',
+                    'user_agent' => request()->userAgent() ?? 'System',
+                ]);
+
+                throw new InvalidArgumentException($eligibility['reason']);
+            }
+
+            // 5. Auto-Generate Unique Canonical Dispatch ID (DSP-YYYY-XXXXXX)
+            if (!$task->dispatch_number) {
+                $seq = (int)(TransportRequest::whereNotNull('dispatch_number')->count() + 1);
+                $dispatchNo = 'DSP-' . date('Y') . '-' . str_pad((string)$seq, 6, '0', STR_PAD_LEFT);
+                while (TransportRequest::where('dispatch_number', $dispatchNo)->exists()) {
+                    $seq++;
+                    $dispatchNo = 'DSP-' . date('Y') . '-' . str_pad((string)$seq, 6, '0', STR_PAD_LEFT);
+                }
+                $task->dispatch_number = $dispatchNo;
+            }
+
+            $now = now();
+
+            // 6. Update Transport Request
+            $task->update([
+                'status' => 'dispatched',
+                'driver_status' => 'dispatched',
+                'dispatched_at' => $now,
+                'dispatched_by' => $operatorId,
+                'dispatch_notes' => $notes ?? $task->dispatch_notes,
+            ]);
+
+            // 7. Update Sales Order State
+            if ($task->salesOrder) {
+                $task->salesOrder->update(['status' => 'dispatched']);
+            }
+
+            // 8. Update Driver State -> ON DELIVERY
+            if ($task->driver) {
+                $task->driver->lockForUpdate();
+                $task->driver->update([
+                    'status' => 'on_delivery',
+                    'current_assignment' => "Active Delivery #{$task->dispatch_number} for Order #{$task->order_reference} (Destination: {$task->city})",
+                ]);
+
+                AuditLog::create([
+                    'user_id' => $operatorId,
+                    'module' => 'Transport Department',
+                    'action' => 'Driver Status Changed',
+                    'table_name' => 'drivers',
+                    'record_id' => $task->driver->id,
+                    'old_values' => null,
+                    'new_values' => json_encode([
+                        'driver_name' => $task->driver->driver_name,
+                        'new_status' => 'ON DELIVERY',
+                        'dispatch_number' => $task->dispatch_number,
+                    ]),
+                    'ip_address' => request()->ip() ?? '127.0.0.1',
+                    'user_agent' => request()->userAgent() ?? 'System',
+                ]);
+            }
+
+            // 9. Update Vehicle State -> ON TRIP
+            if ($task->vehicle) {
+                $task->vehicle->lockForUpdate();
+                $task->vehicle->update([
+                    'status' => 'on_trip',
+                    'current_location' => "In Transit to {$task->city} on Delivery #{$task->dispatch_number}",
+                ]);
+
+                AuditLog::create([
+                    'user_id' => $operatorId,
+                    'module' => 'Transport Department',
+                    'action' => 'Vehicle Status Changed',
+                    'table_name' => 'vehicles',
+                    'record_id' => $task->vehicle->id,
+                    'old_values' => null,
+                    'new_values' => json_encode([
+                        'vehicle_number' => $task->vehicle->vehicle_number,
+                        'new_status' => 'ON TRIP',
+                        'dispatch_number' => $task->dispatch_number,
+                    ]),
+                    'ip_address' => request()->ip() ?? '127.0.0.1',
+                    'user_agent' => request()->userAgent() ?? 'System',
+                ]);
+            }
+
+            // 10. Update Driver Vehicle Assignment
+            if ($task->activeAssignment) {
+                $task->activeAssignment->update([
+                    'status' => 'dispatched',
+                ]);
+            }
+
+            // 11. Create Real Event Delivery Timeline Entry
+            DeliveryTimeline::create([
+                'transport_request_id' => $task->id,
+                'event_type' => 'Shipment Dispatched',
+                'status' => 'dispatched',
+                'notes' => "Shipment released for delivery under Dispatch ID #{$task->dispatch_number}. Driver: {$task->driver?->driver_name}, Vehicle: {$task->vehicle?->vehicle_number}",
+                'user_id' => $operatorId,
+                'driver_name' => $task->driver?->driver_name ?? 'Driver',
+                'recorded_at' => $now,
+            ]);
+
+            // 12. Create Audit Log Events
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Dispatch Successful',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => null,
+                'new_values' => json_encode([
+                    'order_reference' => $task->order_reference,
+                    'dispatch_number' => $task->dispatch_number,
+                    'driver_id' => $task->driver_id,
+                    'vehicle_id' => $task->vehicle_id,
+                    'dispatched_at' => $now->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System',
+            ]);
+
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Active Delivery Created',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => null,
+                'new_values' => json_encode([
+                    'dispatch_number' => $task->dispatch_number,
+                    'order_reference' => $task->order_reference,
+                    'customer_name' => $task->customer_name,
+                    'destination' => $task->city,
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System',
+            ]);
+
+            Log::info("TransportExecution: Order #{$task->order_reference} officially dispatched under Dispatch ID #{$task->dispatch_number}");
+
+            return $task;
+        });
+    }
+
+    /**
+     * Phase 5 Master Endpoint: Controlled Dispatch Cancellation
+     */
+    public function cancelDispatchOrder(TransportRequest $task, string $reason, int $operatorId): TransportRequest
+    {
+        return DB::transaction(function () use ($task, $reason, $operatorId) {
+            $task = TransportRequest::with(['salesOrder', 'driver', 'vehicle', 'activeAssignment'])
+                ->where('id', $task->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (!in_array($task->status, ['dispatched', 'in_transit'])) {
+                throw new InvalidArgumentException("Only active dispatched orders can be cancelled.");
+            }
+
+            if (empty(trim($reason)) || strlen(trim($reason)) < 3) {
+                throw new InvalidArgumentException("A valid cancellation reason (minimum 3 characters) is required.");
+            }
+
+            $oldStatus = $task->status;
+            $now = now();
+
+            $task->update([
+                'status' => 'cancelled',
+                'driver_status' => 'cancelled',
+                'delivery_failure_reason' => $reason,
+            ]);
+
+            if ($task->salesOrder) {
+                $task->salesOrder->update(['status' => 'cancelled']);
+            }
+
+            if ($task->activeAssignment) {
+                $task->activeAssignment->update([
+                    'status' => 'cancelled',
+                    'reassignment_reason' => "Dispatch Cancelled: {$reason}",
+                ]);
+            }
+
+            // Restore Driver Availability if no other active dispatched tasks
+            if ($task->driver) {
+                $otherActiveCount = TransportRequest::where('driver_id', $task->driver_id)
+                    ->whereIn('status', ['dispatched', 'in_transit'])
+                    ->where('id', '!=', $task->id)
+                    ->count();
+
+                if ($otherActiveCount === 0) {
+                    $task->driver->update([
+                        'status' => 'available',
+                        'current_assignment' => null,
+                    ]);
+                }
+            }
+
+            // Restore Vehicle Availability if no other active dispatched tasks
+            if ($task->vehicle) {
+                $otherActiveCount = TransportRequest::where('vehicle_id', $task->vehicle_id)
+                    ->whereIn('status', ['dispatched', 'in_transit'])
+                    ->where('id', '!=', $task->id)
+                    ->count();
+
+                if ($otherActiveCount === 0) {
+                    $task->vehicle->update([
+                        'status' => 'available',
+                        'current_location' => 'Depot Yard',
+                    ]);
+                }
+            }
+
+            DeliveryTimeline::create([
+                'transport_request_id' => $task->id,
+                'event_type' => 'Dispatch Cancelled',
+                'status' => 'cancelled',
+                'notes' => "Dispatch cancelled. Reason: {$reason}",
+                'user_id' => $operatorId,
+                'driver_name' => $task->driver?->driver_name ?? 'Driver',
+                'recorded_at' => $now,
+            ]);
+
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Dispatch Cancelled',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => json_encode(['status' => $oldStatus]),
+                'new_values' => json_encode([
+                    'reason' => $reason,
+                    'cancelled_by' => $operatorId,
+                    'cancelled_at' => $now->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System',
+            ]);
+
+            Log::info("TransportExecution: Dispatch #{$task->dispatch_number} for Order #{$task->order_reference} CANCELLED. Reason: {$reason}");
+
+            return $task;
+        });
+    }
 }

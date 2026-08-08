@@ -355,6 +355,34 @@
                     </div>
                 </div>
 
+                <!-- ============================================================= -->
+                <!-- PHASE 5 OPERATIONAL DISPATCH ACTION SECTION -->
+                <!-- ============================================================= -->
+                <div class="card border-primary-subtle rounded-3 mb-4 bg-body-tertiary d-none" id="profDispatchCard">
+                    <div class="card-header bg-primary-subtle border-bottom border-primary-subtle d-flex align-items-center justify-content-between p-3">
+                        <h6 class="fw-bold text-primary mb-0">🚀 Operational Dispatch Control</h6>
+                        <span class="badge bg-primary text-white font-monospace px-2.5 py-1" id="profDispatchBadge">READY FOR DISPATCH</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <!-- Dispatch Ineligibility Reason Alert -->
+                        <div class="alert alert-warning border-warning-subtle small mb-3 d-none" id="profDispatchBlockedAlert">
+                            ⚠️ <strong>Dispatch Unavailable:</strong> <span id="profDispatchBlockedReason">Warehouse fulfillment or resource assignment incomplete.</span>
+                        </div>
+
+                        <!-- Dispatch Dispatched Banner (When Dispatched) -->
+                        <div class="alert alert-success border-success-subtle small mb-0 d-none" id="profDispatchedBanner">
+                            🚀 <strong>Shipment Dispatched:</strong> Released under Dispatch ID <strong id="profDispatchedNumber">DSP-2026-000001</strong> on <span id="profDispatchedTime">N/A</span>.
+                        </div>
+
+                        <!-- Confirm Dispatch Action Button -->
+                        <div class="text-end d-none" id="profDispatchActionGroup">
+                            <button type="button" class="btn btn-success px-4 fw-bold rounded-3 shadow-sm" id="profTriggerDispatchBtn" onclick="openDispatchConfirmModal()">
+                                🚀 Confirm Dispatch
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Universal Real Event Transport Timeline -->
                 <div class="p-3 bg-body rounded-3 border border-translucent">
                     <h6 class="fw-bold text-body mb-3 border-bottom pb-2">📜 Real-Event Transport Timeline</h6>
@@ -366,6 +394,40 @@
 
             <div class="modal-footer border-top border-translucent p-3">
                 <button type="button" class="btn btn-secondary rounded-3 px-4 fw-bold" data-bs-dismiss="modal">Close Profile</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DEDICATED DISPATCH CONFIRMATION MODAL (#modalConfirmDispatch) -->
+<div class="modal fade" id="modalConfirmDispatch" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow-lg border-translucent bg-body">
+            <div class="modal-header border-bottom border-translucent p-3 bg-primary-subtle text-primary rounded-top-4">
+                <h5 class="modal-title fw-black mb-0">🚀 Confirm Shipment Dispatch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-body mb-3">Are you sure this vehicle is being released for live delivery?</p>
+                <div class="p-3 bg-body-tertiary rounded-3 border border-translucent mb-3">
+                    <div class="small mb-2"><strong>Order Reference:</strong> <span class="fw-bold font-monospace text-primary" id="confirmOrderRef">SO-2026-000123</span></div>
+                    <div class="small mb-2"><strong>Assigned Driver:</strong> <span class="fw-bold text-body" id="confirmDriver">Rahul Sharma</span></div>
+                    <div class="small mb-2"><strong>Assigned Vehicle:</strong> <span class="fw-bold text-body font-monospace" id="confirmVehicle">MH12AB1234</span></div>
+                    <div class="small mb-0"><strong>Destination:</strong> <span class="fw-bold text-body" id="confirmDestination">Mumbai</span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-body">Dispatch Notes (Optional)</label>
+                    <input type="text" class="form-control form-control-sm bg-body border-translucent" id="confirmDispatchNotes" placeholder="Enter gate pass notes, seal tag numbers, or route remarks...">
+                </div>
+                <div class="alert alert-info small mb-0">
+                    ℹ️ <strong>Operational Action:</strong> This releases the shipment to active delivery, updates driver status to <strong>ON DELIVERY</strong>, and vehicle status to <strong>ON TRIP</strong>.
+                </div>
+            </div>
+            <div class="modal-footer border-top border-translucent p-3">
+                <button type="button" class="btn btn-secondary rounded-3 px-4 fw-bold" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success rounded-3 px-4 fw-bold shadow-sm" id="confirmDispatchBtn" onclick="executeDispatchOrder()">
+                    Confirm Dispatch
+                </button>
             </div>
         </div>
     </div>
@@ -482,6 +544,33 @@ function openDeliveryOrderProfile(id) {
                 document.getElementById('profAssignedByName').textContent = data.active_assignment.assigned_by_name || 'Transport Manager';
             }
 
+            // Phase 5 Dispatch Control Rendering
+            const dispatchCard = document.getElementById('profDispatchCard');
+            const dispatchBlockedAlert = document.getElementById('profDispatchBlockedAlert');
+            const dispatchedBanner = document.getElementById('profDispatchedBanner');
+            const dispatchActionGroup = document.getElementById('profDispatchActionGroup');
+
+            if (dispatchCard) {
+                dispatchCard.classList.remove('d-none');
+                dispatchBlockedAlert.classList.add('d-none');
+                dispatchedBanner.classList.add('d-none');
+                dispatchActionGroup.classList.add('d-none');
+
+                if (data.status === 'dispatched' || data.status === 'in_transit') {
+                    dispatchedBanner.classList.remove('d-none');
+                    document.getElementById('profDispatchedNumber').textContent = data.dispatch_number || 'DSP-ACTIVE';
+                    document.getElementById('profDispatchedTime').textContent = data.dispatched_at || 'Dispatched';
+                } else {
+                    const elig = data.dispatch_eligibility || { eligible: false, reason: 'Dispatch conditions not met.' };
+                    if (elig.eligible) {
+                        dispatchActionGroup.classList.remove('d-none');
+                    } else {
+                        dispatchBlockedAlert.classList.remove('d-none');
+                        document.getElementById('profDispatchBlockedReason').textContent = elig.reason;
+                    }
+                }
+            }
+
             // Render Timeline
             const timelineContainer = document.getElementById('profTimeline');
             timelineContainer.innerHTML = '';
@@ -513,6 +602,55 @@ function openDeliveryOrderProfile(id) {
             console.error('Error fetching delivery order profile:', error);
             alert('Failed to fetch delivery order profile details.');
         });
+}
+
+function openDispatchConfirmModal() {
+    if (!currentOrderData) return;
+    document.getElementById('confirmOrderRef').textContent = currentOrderData.order_reference;
+    document.getElementById('confirmDriver').textContent = (currentOrderData.driver?.driver_name || 'Driver') + ' (' + (currentOrderData.driver?.driver_code || '') + ')';
+    document.getElementById('confirmVehicle').textContent = (currentOrderData.vehicle?.vehicle_number || 'Vehicle') + ' (' + (currentOrderData.vehicle?.vehicle_code || '') + ')';
+    document.getElementById('confirmDestination').textContent = currentOrderData.delivery_city || currentOrderData.delivery_address || 'Destination';
+
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmDispatch'));
+    modal.show();
+}
+
+function executeDispatchOrder() {
+    if (!currentOrderData || !currentOrderData.id) return;
+
+    const confirmBtn = document.getElementById('confirmDispatchBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Processing Dispatch...';
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const notes = document.getElementById('confirmDispatchNotes')?.value || '';
+
+    fetch(`/transport/delivery-orders/${currentOrderData.id}/dispatch`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ dispatch_notes: notes }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Dispatch Failed: ' + (data.message || 'Validation Error'));
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Dispatch';
+        }
+    })
+    .catch(error => {
+        console.error('Dispatch execution error:', error);
+        alert('Dispatch could not be completed. The order may have changed. Refresh the order and try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Dispatch';
+    });
 }
 
 function validateVehicleCapacity() {

@@ -144,13 +144,14 @@ class TransportController extends Controller
         $queue = $request->get('queue');
 
         if ($activeTab === 'active') {
-            $query->whereIn('status', ['driver_vehicle_assigned', 'dispatched', 'in_transit', 'out_for_delivery']);
+            $query->whereIn('status', ['dispatched', 'in_transit', 'out_for_delivery']);
         } elseif ($activeTab === 'history') {
             $query->whereIn('status', ['delivered', 'completed', 'returned_to_warehouse', 'cancelled', 'archived']);
         } elseif ($activeTab === 'delivery-orders' && $queue) {
             match($queue) {
                 'awaiting_warehouse' => $query->where('status', 'awaiting_warehouse'),
                 'ready_for_assignment' => $query->whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed']),
+                'driver_vehicle_assigned' => $query->whereIn('status', ['driver_vehicle_assigned', 'assigned']),
                 'in_transit' => $query->whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery']),
                 'completed' => $query->whereIn('status', ['delivered', 'completed']),
                 'cancelled' => $query->where('status', 'cancelled'),
@@ -184,6 +185,7 @@ class TransportController extends Controller
             $s = trim($search);
             $query->where(function ($q) use ($s) {
                 $q->where('request_number', 'like', "%{$s}%")
+                  ->orWhere('dispatch_number', 'like', "%{$s}%")
                   ->orWhere('order_reference', 'like', "%{$s}%")
                   ->orWhere('customer_name', 'like', "%{$s}%")
                   ->orWhere('delivery_city', 'like', "%{$s}%")
@@ -191,6 +193,15 @@ class TransportController extends Controller
                   ->orWhere('vehicle_number', 'like', "%{$s}%")
                   ->orWhere('driver_name', 'like', "%{$s}%")
                   ->orWhere('priority', 'like', "%{$s}%")
+                  ->orWhereHas('driver', function ($dq) use ($s) {
+                      $dq->where('driver_code', 'like', "%{$s}%")
+                         ->orWhere('driver_name', 'like', "%{$s}%")
+                         ->orWhere('employee_id', 'like', "%{$s}%");
+                  })
+                  ->orWhereHas('vehicle', function ($vq) use ($s) {
+                      $vq->where('vehicle_code', 'like', "%{$s}%")
+                         ->orWhere('vehicle_number', 'like', "%{$s}%");
+                  })
                   ->orWhereHas('transportTrip', function ($tq) use ($s) {
                       $tq->where('trip_number', 'like', "%{$s}%");
                   })
@@ -869,6 +880,10 @@ class TransportController extends Controller
             ] : null,
             'eligible_drivers' => $eligibleDrivers,
             'eligible_vehicles' => $eligibleVehicles,
+            'dispatch_number' => $deliveryOrder->dispatch_number,
+            'dispatched_at' => $deliveryOrder->dispatched_at?->format('H:i, d M Y'),
+            'dispatched_by_name' => $deliveryOrder->dispatchedByUser?->name ?? 'Transport Manager',
+            'dispatch_eligibility' => $deliveryOrder->dispatch_eligibility,
             'timeline' => $deliveryOrder->timeline_events,
         ]);
     }
@@ -1039,5 +1054,110 @@ class TransportController extends Controller
             ]);
 
         return response()->json($vehicles);
+    }
+
+    /**
+     * Phase 5 — Confirm Operational Dispatch Endpoint
+     */
+    public function dispatchOrder(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
+    {
+        $notes = $request->input('dispatch_notes');
+
+        try {
+            $task = $this->executionEngine->confirmDispatchOrder(
+                $transportRequest,
+                auth()->id() ?? 1,
+                $notes
+            );
+
+            $message = "🚀 Order #{$task->order_reference} Dispatched Successfully! Shipment released under Dispatch ID #{$task->dispatch_number}.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'dispatch_number' => $task->dispatch_number,
+                    'status' => $task->status,
+                    'status_label' => $task->status_label,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Phase 5 — Controlled Dispatch Cancellation Endpoint
+     */
+    public function cancelDispatch(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'cancellation_reason' => 'required|string|min:3|max:1000',
+        ], [
+            'cancellation_reason.required' => 'A valid cancellation reason is required.',
+        ]);
+
+        try {
+            $task = $this->executionEngine->cancelDispatchOrder(
+                $transportRequest,
+                $validated['cancellation_reason'],
+                auth()->id() ?? 1
+            );
+
+            $message = "Dispatch for Order #{$task->order_reference} has been cancelled. Audit trail updated.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Phase 5 — Dedicated Active Deliveries Workspace
+     */
+    public function indexActiveDeliveries(Request $request)
+    {
+        $request->merge(['tab' => 'active']);
+        return $this->index($request);
+    }
+
+    /**
+     * Phase 5 — Dedicated Active Delivery Profile Endpoint (JSON)
+     */
+    public function showActiveDelivery(TransportRequest $deliveryOrder): JsonResponse
+    {
+        return $this->showDeliveryOrder($deliveryOrder);
+    }
+
+    /**
+     * Phase 5 — Dedicated History Workspace
+     */
+    public function indexHistory(Request $request)
+    {
+        $request->merge(['tab' => 'history']);
+        return $this->index($request);
     }
 }
