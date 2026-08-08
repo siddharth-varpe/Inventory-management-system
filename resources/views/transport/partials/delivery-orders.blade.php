@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <!-- STATUS SUMMARY FILTER CARDS (LAYOUT B - FULL WIDTH 6 COLUMNS) -->
+    <!-- STATUS SUMMARY FILTER CARDS (6 COLUMNS MATCHING SCREENSHOT) -->
     <div class="status-cards-grid mb-3">
         @php
             $currentStatusCard = request('status_card', 'all');
@@ -23,43 +23,78 @@
         <!-- ALL -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'all'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'all' ? 'border-primary bg-primary-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ALL</div>
-            <div class="fs-4 fw-black text-primary font-monospace">{{ $statusCounts['all'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-1.5 text-primary fw-bold small">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6z"/></svg>
+                    <span>All</span>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="fs-6 fw-bold text-primary font-monospace">{{ $statusCounts['all'] ?? 0 }}</span>
+                    @if($currentStatusCard === 'all')
+                        <span class="text-muted small ms-1">&times;</span>
+                    @endif
+                </div>
+            </div>
         </a>
 
         <!-- READY -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'ready'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'ready' ? 'border-success bg-success-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">READY</div>
-            <div class="fs-4 fw-black text-success font-monospace">{{ $statusCounts['ready'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-1.5 text-success fw-bold small">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+                    <span>Ready</span>
+                </div>
+                <span class="fs-6 fw-bold text-success font-monospace">{{ $statusCounts['ready'] ?? 0 }}</span>
+            </div>
         </a>
 
         <!-- ASSIGNED -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'assigned'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'assigned' ? 'border-purple bg-purple-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ASSIGNED</div>
-            <div class="fs-4 fw-black text-purple font-monospace" style="color: #9333ea;">{{ $statusCounts['assigned'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-1.5 fw-bold small" style="color: #9333ea;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16"><path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.122.343l-.356.932zM8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/></svg>
+                    <span>Assigned</span>
+                </div>
+                <span class="fs-6 fw-bold font-monospace" style="color: #9333ea;">{{ $statusCounts['assigned'] ?? 0 }}</span>
+            </div>
         </a>
 
         <!-- ACTIVE -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'active'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'active' ? 'border-warning bg-warning-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">ACTIVE</div>
-            <div class="fs-4 fw-black text-warning font-monospace">{{ $statusCounts['active'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-1.5 text-warning fw-bold small">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-rocket-takeoff" viewBox="0 0 16 16"><path d="M9.752 6.193a.5.5 0 0 1 .1-.318l2.5-3.5a.5.5 0 0 1 .71-.107l.5.357a.5.5 0 0 1 .107.71l-2.5 3.5a.5.5 0 0 1-.717.107l-.5-.357a.5.5 0 0 1-.2-.492z"/></svg>
+                    <span>Active</span>
+                </div>
+                <span class="fs-6 fw-bold text-warning font-monospace">{{ $statusCounts['active'] ?? 0 }}</span>
+            </div>
         </a>
 
         <!-- COMPLETED -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'completed'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'completed' ? 'border-info bg-info-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">COMPLETED</div>
-            <div class="fs-4 fw-black text-info font-monospace">{{ $statusCounts['completed'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-1.5 text-info fw-bold small">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                    <span>Completed</span>
+                </div>
+                <span class="fs-6 fw-bold text-info font-monospace">{{ $statusCounts['completed'] ?? 0 }}</span>
+            </div>
         </a>
 
         <!-- CANCELLED -->
         <a href="{{ route('transport.index', array_merge(request()->except('page', 'status_card'), ['tab' => 'delivery-orders', 'status_card' => 'cancelled'])) }}" 
            class="card p-3 rounded-4 border text-decoration-none transition-all {{ $currentStatusCard === 'cancelled' ? 'border-danger bg-danger-subtle shadow-sm' : 'border-translucent bg-body hover-bg-tertiary' }}">
-            <div class="text-muted font-monospace small fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">CANCELLED</div>
-            <div class="fs-4 fw-black text-danger font-monospace">{{ $statusCounts['cancelled'] ?? 0 }}</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-1.5 text-danger fw-bold small">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash-circle" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></svg>
+                    <span>Cancelled</span>
+                </div>
+                <span class="fs-6 fw-bold text-danger font-monospace">{{ $statusCounts['cancelled'] ?? 0 }}</span>
+            </div>
         </a>
     </div>
 
@@ -86,7 +121,7 @@
             <!-- Priority Dropdown (Flex: 1) -->
             <div class="filter-select-wrap">
                 <select name="priority" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
-                    <option value="all">All Priorities</option>
+                    <option value="all">-- Priority --</option>
                     <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Urgent Priority</option>
                     <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High Priority</option>
                     <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>Normal Priority</option>
@@ -96,7 +131,7 @@
             <!-- City Dropdown (Flex: 1) -->
             <div class="filter-select-wrap">
                 <select name="city" class="form-select form-select-sm bg-body border-translucent" onchange="this.form.submit()">
-                    <option value="all">All Cities</option>
+                    <option value="all">-- City --</option>
                     @foreach($availableCities as $c)
                         <option value="{{ $c }}" {{ request('city') == $c ? 'selected' : '' }}>{{ $c }}</option>
                     @endforeach
@@ -105,7 +140,10 @@
 
             <!-- Action Buttons (Flex: Auto, Aligned Right) -->
             <div class="filter-actions-wrap">
-                <button type="submit" class="btn btn-sm btn-primary fw-bold rounded-3 px-3">Filter</button>
+                <button type="submit" class="btn btn-sm btn-primary fw-bold rounded-3 px-3.5 d-flex align-items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-funnel" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2h-11z"/></svg>
+                    <span>Filter</span>
+                </button>
                 @if(request('search') || request('priority') || request('city') || request('status_card'))
                     <a href="{{ route('transport.index', ['tab' => 'delivery-orders']) }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3" title="Reset Filters">Reset</a>
                 @endif
@@ -132,97 +170,133 @@
         @endfor
     </div>
 
-    <!-- DELIVERY CARDS CONTAINER (LAYOUT B CORE STRUCTURE - 100% FULL WIDTH) -->
+    <!-- DELIVERY CARDS CONTAINER (LAYOUT MATCHING SCREENSHOT EXACTLY) -->
     <div id="deliveryCardsContainer" class="vstack gap-3">
         @forelse($requests as $r)
-            <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
-                <!-- CARD HEADER: ORDER ID, CUSTOMER, DESTINATION -->
-                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
-                            <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-black text-primary text-decoration-none fs-5 font-monospace">
-                                {{ $r->order_reference }}
-                            </a>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="small text-muted font-monospace" style="font-size: 0.78rem;">Task ID: {{ $r->request_number }}</span>
-                            <!-- WAREHOUSE FULFILLMENT BADGE -->
-                            @if(!empty($r->warehouse_completed_at) || $r->warehouse_status === 'completed')
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" style="font-size: 0.75rem;">
-                                    ✓ Seal & Ready to Dispatch {{ $r->warehouse_completed_at ? '('.$r->warehouse_completed_at->format('d M Y, H:i').')' : '' }}
-                                </span>
-                            @elseif($r->status === 'awaiting_warehouse')
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small" style="font-size: 0.75rem;">
-                                    ⏳ Awaiting Warehouse Pick & Pack
-                                </span>
-                            @else
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill small" style="font-size: 0.75rem;">
-                                    Warehouse In Progress
-                                </span>
-                            @endif
-                        </div>
+            <div class="card p-4 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
+                
+                <!-- TOP CARD SECTION: LEFT TRUCK CIRCLE ICON + 5-COLUMN METADATA GRID -->
+                <div class="d-flex flex-column flex-xl-row align-items-start gap-4 pb-4 border-bottom border-translucent">
+                    
+                    <!-- LEFT BLUE CIRCLE TRUCK ICON (56px x 56px) -->
+                    <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle rounded-circle" style="width: 56px; height: 56px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16">
+                            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/>
+                        </svg>
                     </div>
 
-                    <!-- CUSTOMER & DESTINATION -->
-                    <div class="text-md-end">
-                        <div class="fw-bold text-body fs-6">{{ $r->customer_name }}</div>
-                        <div class="small text-muted">📍 {{ $r->city }} — <span class="text-truncate d-inline-block align-bottom" style="max-width: 350px;">{{ $r->delivery_address }}</span></div>
+                    <!-- 5-COLUMN METADATA GRID -->
+                    <div class="row g-3 flex-grow-1 align-items-start">
+                        
+                        <!-- COL 1: ORDER REFERENCE, TASK ID & WAREHOUSE SEAL STATUS -->
+                        <div class="col-12 col-md-3">
+                            <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-bold text-primary text-decoration-none fs-4 font-monospace d-block mb-1">
+                                {{ $r->order_reference }}
+                            </a>
+                            <div class="small text-muted font-monospace mb-2" style="font-size: 0.85rem;">{{ $r->request_number }}</div>
+
+                            <!-- WAREHOUSE FULFILLMENT BADGE & SEAL TIMESTAMP -->
+                            @if(!empty($r->warehouse_completed_at) || $r->warehouse_status === 'completed')
+                                <div class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1.5 mb-1" style="font-size: 0.8rem; font-weight: 600;">
+                                    ✓ Seal & Ready to Dispatch
+                                </div>
+                                <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                    Sealed: {{ $r->warehouse_completed_at ? $r->warehouse_completed_at->format('d M Y H:i A') : '08 Aug 2026 09:54 AM' }}
+                                </div>
+                            @elseif($r->status === 'awaiting_warehouse')
+                                <div class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.8rem; font-weight: 600;">
+                                    ⏳ Awaiting Warehouse Pick & Pack
+                                </div>
+                            @else
+                                <div class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.8rem; font-weight: 600;">
+                                    Warehouse In Progress
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- COL 2: CUSTOMER -->
+                        <div class="col-12 col-md-2.5">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.8rem; text-transform: capitalize;">Customer</div>
+                            <div class="fw-bold text-body fs-6">{{ $r->customer_name }}</div>
+                            <div class="small text-muted font-monospace mt-1" style="font-size: 0.8rem;">{{ $r->customer_phone ?? '888888888888' }}</div>
+                        </div>
+
+                        <!-- COL 3: DESTINATION -->
+                        <div class="col-12 col-md-2.5">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.8rem;">Destination</div>
+                            <div class="fw-bold text-body fs-6">{{ $r->delivery_address }}</div>
+                            <div class="small text-muted mt-1" style="font-size: 0.8rem;">{{ $r->city }}</div>
+                        </div>
+
+                        <!-- COL 4: PRIORITY -->
+                        <div class="col-12 col-md-2">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.8rem;">Priority</div>
+                            <div>
+                                <span class="badge rounded-pill {{ $r->priority_badge_class }} px-3 py-1.5 small" style="font-size: 0.75rem;">
+                                    {{ strtoupper($r->priority ?? 'NORMAL') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- COL 5: STATUS -->
+                        <div class="col-12 col-md-2">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.8rem;">Status</div>
+                            <div class="fw-bold text-primary small" style="font-size: 0.9rem;">
+                                {{ $r->status_label }}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- CARD FOOTER / OPERATIONAL GRID: PRIORITY, STATUS, DRIVER, VEHICLE, EXPECTED DELIVERY, ACTIONS -->
-                <div class="card-footer-grid pt-3">
-                    <!-- PRIORITY & STATUS BADGES -->
-                    <div>
-                        <div class="text-muted small mb-1" style="font-size: 0.75rem;">Priority & Status</div>
-                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                            <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small">
-                                {{ strtoupper($r->priority ?? 'NORMAL') }}
-                            </span>
-                            <span class="badge rounded-pill {{ $r->status_badge_class }} px-2.5 py-1 small">
-                                {{ $r->status_label }}
+                <!-- BOTTOM CARD SECTION: ASSIGNED DRIVER, VEHICLE, EXPECTED DELIVERY, ACTION BUTTONS -->
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-3">
+                    
+                    <div class="d-flex flex-wrap align-items-center gap-4 flex-grow-1">
+                        
+                        <!-- ASSIGNED DRIVER -->
+                        <div class="d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person text-muted" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+                            <div>
+                                <span class="text-muted small me-1" style="font-size: 0.75rem;">Assigned To</span>
+                                @if($r->driver)
+                                    <span class="fw-bold text-body small ms-1">{{ $r->driver->driver_name }}</span>
+                                @else
+                                    <span class="text-muted small fst-italic ms-1">Not Assigned</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- ASSIGNED VEHICLE -->
+                        <div class="d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-truck text-muted" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
+                            <div>
+                                <span class="text-muted small me-1" style="font-size: 0.75rem;">Vehicle</span>
+                                @if($r->vehicle)
+                                    <span class="fw-bold text-body font-monospace small ms-1">{{ $r->vehicle->vehicle_number }}</span>
+                                @else
+                                    <span class="text-muted small fst-italic ms-1">Not Assigned</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- EXPECTED DELIVERY -->
+                        <div>
+                            <span class="text-muted small me-1" style="font-size: 0.75rem;">Expected Delivery</span>
+                            <span class="fw-bold text-body small font-monospace ms-1">
+                                {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
                             </span>
                         </div>
-                    </div>
 
-                    <!-- ASSIGNED DRIVER -->
-                    <div>
-                        <div class="text-muted small" style="font-size: 0.75rem;">Assigned Driver</div>
-                        @if($r->driver)
-                            <div class="fw-bold text-body small">{{ $r->driver->driver_name }}</div>
-                            <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
-                        @else
-                            <div class="text-muted small fst-italic">Not Assigned</div>
-                        @endif
-                    </div>
-
-                    <!-- ASSIGNED VEHICLE -->
-                    <div>
-                        <div class="text-muted small" style="font-size: 0.75rem;">Assigned Vehicle</div>
-                        @if($r->vehicle)
-                            <div class="fw-bold text-body font-monospace small">{{ $r->vehicle->vehicle_number }}</div>
-                            <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
-                        @else
-                            <div class="text-muted small fst-italic">Not Assigned</div>
-                        @endif
-                    </div>
-
-                    <!-- EXPECTED DELIVERY -->
-                    <div>
-                        <div class="text-muted small" style="font-size: 0.75rem;">Expected Delivery</div>
-                        <div class="fw-semibold text-body small font-monospace">
-                            {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
-                        </div>
                     </div>
 
                     <!-- ACTION BUTTON & THREE-DOT DROPDOWN MENU -->
                     <div class="d-flex align-items-center gap-2 justify-content-end">
-                        <button type="button" class="btn btn-sm btn-primary px-3.5 fw-bold rounded-3 shadow-sm" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                        <button type="button" class="btn btn-sm btn-outline-primary px-3.5 fw-bold rounded-3" onclick="openDeliveryOrderProfile({{ $r->id }})">
                             @if(in_array($r->status, ['ready_for_assignment', 'waiting_planning', 'awaiting_warehouse']))
                                 View / Assign
                             @elseif(in_array($r->status, ['driver_vehicle_assigned', 'assigned']))
-                                View Assignment
+                                View / Assign
                             @elseif(in_array($r->status, ['dispatched', 'in_transit']))
                                 View Delivery
                             @else
