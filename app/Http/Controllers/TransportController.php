@@ -38,8 +38,16 @@ class TransportController extends Controller
             } elseif ($request->routeIs('transport.vehicles.*')) {
                 $activeTab = 'vehicles';
             } else {
-                $activeTab = 'dashboard';
+                $activeTab = 'overview';
             }
+        } else {
+            $activeTab = match(strtolower($activeTab)) {
+                'dashboard', 'overview' => 'overview',
+                'delivery-orders', 'trips', 'dispatch', 'active', 'history' => 'delivery-orders',
+                'drivers' => 'drivers',
+                'vehicles', 'maintenance' => 'vehicles',
+                default => 'overview',
+            };
         }
         $status = $request->input('status', 'all');
         $priority = $request->input('priority', 'all');
@@ -253,6 +261,12 @@ class TransportController extends Controller
         // Operational Statistics Analytics
         $analytics = $this->executionEngine->getOperationalAnalytics();
 
+        // Operational Overview Counts (Minimal Operational Metrics)
+        $ordersAwaitingWarehouseCount = TransportRequest::where('status', 'awaiting_warehouse')->count();
+        $ordersReadyAssignmentCount = TransportRequest::whereIn('status', ['ready_for_assignment', 'waiting_planning', 'vehicle_assigned_pending', 'driver_assigned_pending', 'planning_in_progress', 'planning_completed'])->count();
+        $ordersAssignedCount = TransportRequest::whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count();
+        $activeDeliveriesCount = TransportRequest::whereIn('status', ['in_transit', 'dispatched', 'out_for_delivery'])->count();
+
         $selectedId = $request->get('task_id', $requests->first()?->id);
         $selectedTask = $selectedId ? TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip', 'dispatchManifest', 'dispatchChecklist', 'acceptedByUser', 'creator', 'deliveryTimelines'])->find($selectedId) : null;
 
@@ -261,7 +275,8 @@ class TransportController extends Controller
             'availableVehicles', 'availableDrivers', 'availableCities', 'activeTrips',
             'pendingClosureTrips', 'archivedTrips', 'complianceAlerts', 'analytics',
             'status', 'priority', 'city', 'search', 'driverSearch', 'driverStatus',
-            'vehicleSearch', 'vehicleStatus'
+            'vehicleSearch', 'vehicleStatus',
+            'ordersAwaitingWarehouseCount', 'ordersReadyAssignmentCount', 'ordersAssignedCount', 'activeDeliveriesCount'
         ));
     }
 

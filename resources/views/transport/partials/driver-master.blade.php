@@ -5,12 +5,12 @@
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="badge bg-primary text-white font-monospace px-3 py-1 rounded-pill">PHASE 1 DRIVER MASTER</span>
+                    <span class="badge bg-primary text-white font-monospace px-3 py-1 rounded-pill">Drivers Roster</span>
                     <span class="badge bg-body-tertiary text-body border border-translucent rounded-pill px-3 py-1 font-monospace">
                         Total Registered Drivers: {{ $drivers->total() }}
                     </span>
                 </div>
-                <h4 class="fw-black text-body mb-0">👤 Driver Master & Roster Management</h4>
+                <h4 class="fw-black text-body mb-0">👤 Driver Management</h4>
                 <p class="text-muted small mb-0 mt-1">Permanent driver identities (`DRV-000001`), verification, license compliance, operational statuses & suspension audits.</p>
             </div>
             <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-bold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRegisterDriver">

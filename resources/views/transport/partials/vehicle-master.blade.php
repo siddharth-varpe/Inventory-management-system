@@ -5,12 +5,12 @@
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 border-bottom pb-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="badge bg-danger text-white font-monospace px-3 py-1 rounded-pill">PHASE 2 VEHICLE MASTER</span>
+                    <span class="badge bg-primary text-white font-monospace px-3 py-1 rounded-pill">Fleet Register</span>
                     <span class="badge bg-body-tertiary text-body border border-translucent rounded-pill px-3 py-1 font-monospace">
                         Total Registered Fleet: {{ $vehicles->total() }} Vehicles
                     </span>
                 </div>
-                <h4 class="fw-black text-body mb-0">🚛 Fleet Vehicle Master & Capacity Management</h4>
+                <h4 class="fw-black text-body mb-0">🚛 Vehicle Management</h4>
                 <p class="text-muted small mb-0 mt-1">Permanent vehicle identities (`VEH-000001`), legal registration numbers, weight capacities (kg), document compliance & maintenance logs.</p>
             </div>
             <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-bold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRegisterVehicle">
