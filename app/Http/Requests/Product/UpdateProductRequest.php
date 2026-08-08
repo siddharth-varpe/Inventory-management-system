@@ -17,6 +17,32 @@ class UpdateProductRequest extends FormRequest
     }
 
     /**
+     * Prepare inputs for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $sanitizeFk = function ($val) {
+            if ($val === null || $val === '' || $val === '0' || $val === 0 || $val === 'null' || $val === 'undefined') {
+                return null;
+            }
+            return (int) $val;
+        };
+
+        $this->merge([
+            'category_id' => $sanitizeFk($this->input('category_id')),
+            'brand_id' => $sanitizeFk($this->input('brand_id')),
+            'unit_id' => $sanitizeFk($this->input('unit_id')),
+            'tax_id' => $sanitizeFk($this->input('tax_id')),
+            'track_inventory' => $this->boolean('track_inventory', true),
+            'batch_tracking' => $this->boolean('batch_tracking', false),
+            'expiry_tracking' => $this->boolean('expiry_tracking', false),
+            'purchase_price' => $this->input('purchase_price') !== null ? (float)$this->input('purchase_price') : 0.00,
+            'cost_price' => $this->input('cost_price') !== null ? (float)$this->input('cost_price') : 0.00,
+            'selling_price' => $this->input('selling_price') !== null ? (float)$this->input('selling_price') : 0.00,
+        ]);
+    }
+
+    /**
      * Get validation rules.
      *
      * @return array<string, mixed>

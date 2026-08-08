@@ -14,6 +14,16 @@ class Tax extends Model
 {
     use HasFactory, SoftDeletes, HasAuditLog, HasActivityLog;
 
+    protected static function booted(): void
+    {
+        static::creating(function (Tax $tax): void {
+            if (empty($tax->code)) {
+                $slug = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $tax->name ?? 'TAX'));
+                $tax->code = 'TAX-' . substr($slug, 0, 6) . '-' . strtoupper(\Illuminate\Support\Str::random(4));
+            }
+        });
+    }
+
     /**
      * Mass assignable attributes.
      *

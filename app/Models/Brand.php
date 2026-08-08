@@ -15,6 +15,16 @@ class Brand extends Model
 {
     use HasFactory, SoftDeletes, HasAuditLog, HasActivityLog;
 
+    protected static function booted(): void
+    {
+        static::creating(function (Brand $brand): void {
+            if (empty($brand->code)) {
+                $slug = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $brand->name ?? 'BRD'));
+                $brand->code = 'BRD-' . substr($slug, 0, 6) . '-' . strtoupper(\Illuminate\Support\Str::random(4));
+            }
+        });
+    }
+
     /**
      * Mass assignable attributes.
      *

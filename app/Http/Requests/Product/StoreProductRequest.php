@@ -21,7 +21,18 @@ class StoreProductRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $sanitizeFk = function ($val) {
+            if ($val === null || $val === '' || $val === '0' || $val === 0 || $val === 'null' || $val === 'undefined') {
+                return null;
+            }
+            return (int) $val;
+        };
+
         $this->merge([
+            'category_id' => $sanitizeFk($this->input('category_id')),
+            'brand_id' => $sanitizeFk($this->input('brand_id')),
+            'unit_id' => $sanitizeFk($this->input('unit_id')),
+            'tax_id' => $sanitizeFk($this->input('tax_id')),
             'track_inventory' => $this->boolean('track_inventory', true),
             'batch_tracking' => $this->boolean('batch_tracking', false),
             'expiry_tracking' => $this->boolean('expiry_tracking', false),

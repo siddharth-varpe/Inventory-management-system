@@ -79,10 +79,12 @@ class ProductController extends Controller
             );
 
             return redirect()->route('products.show', $product)->with('success', "Product '{$product->name}' registered successfully in master catalog.");
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error("ProductController::store failed: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
-            return back()->withInput()->with('error', 'Failed to register product: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Unable to save product master record. Please verify the selected category, brand, unit and tax.');
         }
     }
 

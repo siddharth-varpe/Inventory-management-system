@@ -61,6 +61,17 @@ class ProductService extends BaseService implements ProductServiceInterface
      */
     public function createProduct(array $data, ?UploadedFile $image = null, ?array $documents = null): Product
     {
+        foreach (['category_id', 'brand_id', 'unit_id', 'tax_id'] as $fk) {
+            if (array_key_exists($fk, $data)) {
+                $val = $data[$fk];
+                if ($val === null || $val === '' || $val === '0' || $val === 0 || $val === 'null' || $val === 'undefined') {
+                    $data[$fk] = null;
+                } else {
+                    $data[$fk] = (int) $val;
+                }
+            }
+        }
+
         if (empty($data['code'])) {
             $data['code'] = 'PRD-' . strtoupper(Str::random(6));
         }
@@ -122,6 +133,17 @@ class ProductService extends BaseService implements ProductServiceInterface
      */
     public function updateProduct(int|string $id, array $data, ?UploadedFile $image = null, ?array $documents = null): bool
     {
+        foreach (['category_id', 'brand_id', 'unit_id', 'tax_id'] as $fk) {
+            if (array_key_exists($fk, $data)) {
+                $val = $data[$fk];
+                if ($val === null || $val === '' || $val === '0' || $val === 0 || $val === 'null' || $val === 'undefined') {
+                    $data[$fk] = null;
+                } else {
+                    $data[$fk] = (int) $val;
+                }
+            }
+        }
+
         /** @var Product $product */
         $product = $this->getById($id);
 
