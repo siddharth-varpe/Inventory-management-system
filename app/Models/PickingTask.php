@@ -58,6 +58,15 @@ class PickingTask extends Model
         return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
+    /**
+     * Portable database-agnostic priority ranking (URGENT > HIGH > MEDIUM > LOW > UNKNOWN/NULL) and FIFO created_at ASC sorting.
+     */
+    public function scopeOrderByPriorityAndFifo($query)
+    {
+        return $query->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END ASC")
+                     ->orderBy('created_at', 'asc');
+    }
+
     public function getIsAllVerifiedAttribute(): bool
     {
         return $this->verified_items_count === $this->total_items_count && $this->total_items_count > 0;

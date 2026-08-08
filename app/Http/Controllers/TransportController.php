@@ -200,17 +200,11 @@ class TransportController extends Controller
             });
         }
 
-        if (config('database.default') === 'sqlite') {
-            $requests = $query->orderBy('id', 'desc')
-                              ->paginate(15)
-                              ->withQueryString();
-        } else {
-            $requests = $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'normal', 'medium', 'low')")
-                              ->orderByRaw("COALESCE(required_dispatch_date, expected_delivery_date, created_at) ASC")
-                              ->orderByRaw("COALESCE(warehouse_completed_at, created_at) ASC")
-                              ->paginate(15)
-                              ->withQueryString();
-        }
+        $requests = $query->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'medium' THEN 4 ELSE 5 END ASC")
+                          ->orderByRaw("COALESCE(required_dispatch_date, expected_delivery_date, created_at) ASC")
+                          ->orderByRaw("COALESCE(warehouse_completed_at, created_at) ASC")
+                          ->paginate(15)
+                          ->withQueryString();
 
         $availableVehicles = Vehicle::where('status', 'available')
                                     ->where(function ($q) {

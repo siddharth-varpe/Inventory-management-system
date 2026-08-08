@@ -46,8 +46,7 @@ class PickingController extends Controller
             });
         }
 
-        $tasks = $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'medium', 'low')")
-                       ->orderBy('created_at', 'asc')
+        $tasks = $query->orderByPriorityAndFifo()
                        ->paginate(15)
                        ->withQueryString();
 

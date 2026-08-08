@@ -61,8 +61,7 @@ class FulfillmentStationController extends Controller
         }
 
         // Sort by Priority (urgent > high > medium > low) -> FIFO (created_at asc)
-        $tasks = $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'medium', 'low')")
-                       ->orderBy('created_at', 'asc')
+        $tasks = $query->orderByPriorityAndFifo()
                        ->paginate(15)
                        ->withQueryString();
 
@@ -158,8 +157,7 @@ class FulfillmentStationController extends Controller
             // Query next highest priority pending task in queue
             $nextTask = PickingTask::whereIn('status', ['pending', 'assigned', 'picking', 'picked', 'packed'])
                 ->where('id', '!=', $task->id)
-                ->orderByRaw("FIELD(priority, 'urgent', 'high', 'medium', 'low')")
-                ->orderBy('created_at', 'asc')
+                ->orderByPriorityAndFifo()
                 ->first();
 
             $redirectParams = $nextTask ? ['task_id' => $nextTask->id] : [];

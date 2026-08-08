@@ -37,8 +37,7 @@ class PickPackService
         }
 
         // Sort by Priority (urgent > high > medium > low) -> FIFO (created_at asc)
-        return $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'medium', 'low')")
-                     ->orderBy('created_at', 'asc')
+        return $query->orderByPriorityAndFifo()
                      ->paginate($perPage)
                      ->withQueryString();
     }
