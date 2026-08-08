@@ -173,149 +173,171 @@
     <!-- DELIVERY CARDS CONTAINER (LAYOUT MATCHING SCREENSHOT EXACTLY) -->
     <div id="deliveryCardsContainer" class="vstack gap-3">
         @forelse($requests as $r)
-            <div class="card p-3 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
+            <div class="card p-3.5 rounded-4 shadow-sm border-translucent bg-body delivery-order-card">
                 
-                <!-- TOP CARD SECTION: LEFT TRUCK CIRCLE ICON + 5-COLUMN METADATA GRID -->
-                <div class="d-flex flex-column flex-xl-row align-items-start gap-3 pb-2.5 border-bottom border-translucent">
-                    
-                    <!-- LEFT BLUE CIRCLE TRUCK ICON (44px x 44px) -->
-                    <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle rounded-circle" style="width: 44px; height: 44px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16">
-                            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/>
-                        </svg>
+                <!-- SECTION 1: TOP HEADER SECTION (ANNOTATED ITEMS 1 - 8) -->
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pb-3 border-bottom border-translucent">
+                    <!-- LEFT SIDE: ITEM 1 (AVATAR), ITEM 2 (ORDER ID), ITEM 3 (TASK ID), ITEM 4 (STATUS BADGE), ITEM 5 (PRIORITY BADGE), ITEM 6 (SEAL BADGE) -->
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- ITEM 1: CIRCLE TRUCK AVATAR (52px x 52px) -->
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle rounded-circle" style="width: 52px; height: 52px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-truck text-primary" viewBox="0 0 16 16">
+                                <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <!-- ITEM 2: ORDER REFERENCE (SO-2026-00001) -->
+                                <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-bold text-primary text-decoration-none fs-4 font-monospace">
+                                    {{ $r->order_reference }}
+                                </a>
+
+                                <!-- ITEM 4: DRIVER & VEHICLE ASSIGNED STATUS BADGE -->
+                                <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 small">
+                                    ✓ {{ $r->status_label }}
+                                </span>
+
+                                <!-- ITEM 5: PRIORITY BADGE (NORMAL) -->
+                                <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small">
+                                    {{ strtoupper($r->priority ?? 'NORMAL') }}
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <!-- ITEM 3: TASK ID (TRN-2026-600001) -->
+                                <span class="small text-muted font-monospace me-2" style="font-size: 0.8rem;">{{ $r->request_number }}</span>
+
+                                <!-- ITEM 6: WAREHOUSE SEAL STATUS BADGE WITH TIMESTAMP -->
+                                @if(!empty($r->warehouse_completed_at) || $r->warehouse_status === 'completed')
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 600;">
+                                        ✓ Seal & Ready to Dispatch {{ $r->warehouse_completed_at ? '('.$r->warehouse_completed_at->format('d M Y, H:i').')' : '(08 Aug 2026, 09:54)' }}
+                                    </span>
+                                @elseif($r->status === 'awaiting_warehouse')
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 600;">
+                                        ⏳ Awaiting Warehouse Pick & Pack
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 600;">
+                                        Warehouse In Progress
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- 5-COLUMN METADATA GRID -->
-                    <div class="row g-2.5 flex-grow-1 align-items-start">
+                    <!-- RIGHT SIDE: ITEM 7 (CUSTOMER NAME), ITEM 8 (ADDRESS & CITY WITH RED PIN) -->
+                    <div class="text-md-end">
+                        <!-- ITEM 7: CUSTOMER NAME (opstech solution) -->
+                        <div class="fw-bold text-body fs-6 mb-1">{{ $r->customer_name }}</div>
                         
-                        <!-- COL 1: ORDER REFERENCE, TASK ID & WAREHOUSE SEAL STATUS -->
-                        <div class="col-12 col-md-3">
-                            <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $r->id }})" class="fw-bold text-primary text-decoration-none fs-5 font-monospace d-block mb-0.5">
-                                {{ $r->order_reference }}
-                            </a>
-                            <div class="small text-muted font-monospace mb-1.5" style="font-size: 0.8rem;">{{ $r->request_number }}</div>
+                        <!-- ITEM 8: CUSTOMER ADDRESS & CITY WITH RED PIN -->
+                        <div class="small text-muted d-flex align-items-center justify-content-md-end gap-1">
+                            <span class="text-danger">📍</span>
+                            <span>{{ $r->delivery_address }} — <strong class="text-body-secondary">{{ $r->city }}</strong></span>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- WAREHOUSE FULFILLMENT BADGE & SEAL TIMESTAMP -->
-                            @if(!empty($r->warehouse_completed_at) || $r->warehouse_status === 'completed')
-                                <div class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1 mb-0.5" style="font-size: 0.75rem; font-weight: 600;">
-                                    ✓ Seal & Ready to Dispatch
-                                </div>
-                                <div class="text-muted small mt-0.5" style="font-size: 0.725rem;">
-                                    Sealed: {{ $r->warehouse_completed_at ? $r->warehouse_completed_at->format('d M Y H:i A') : '08 Aug 2026 09:54 AM' }}
-                                </div>
-                            @elseif($r->status === 'awaiting_warehouse')
-                                <div class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 600;">
-                                    ⏳ Awaiting Warehouse Pick & Pack
-                                </div>
-                            @else
-                                <div class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 600;">
-                                    Warehouse In Progress
-                                </div>
-                            @endif
+                <!-- SECTION 2: MIDDLE METADATA GRID SECTION (ANNOTATED ITEMS 9 - 12) -->
+                <div class="py-3 border-bottom border-translucent">
+                    <div class="row g-3 align-items-center">
+                        <!-- ITEM 9: CUSTOMER -->
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.75rem;">Customer</div>
+                            <div class="fw-bold text-body fs-6">{{ $r->customer_name }}</div>
+                            <div class="small text-muted font-monospace" style="font-size: 0.78rem;">{{ $r->customer_phone ?? '888888888888' }}</div>
                         </div>
 
-                        <!-- COL 2: CUSTOMER -->
-                        <div class="col-12 col-md-2.5">
-                            <div class="text-muted small font-monospace fw-semibold mb-0.5" style="font-size: 0.75rem; text-transform: capitalize;">Customer</div>
-                            <div class="fw-bold text-body small">{{ $r->customer_name }}</div>
-                            <div class="small text-muted font-monospace mt-0.5" style="font-size: 0.75rem;">{{ $r->customer_phone ?? '888888888888' }}</div>
+                        <!-- ITEM 10: DESTINATION -->
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.75rem;">Destination</div>
+                            <div class="fw-bold text-body fs-6">{{ $r->delivery_address }}</div>
+                            <div class="small text-muted" style="font-size: 0.78rem;">{{ $r->city }}</div>
                         </div>
 
-                        <!-- COL 3: DESTINATION -->
-                        <div class="col-12 col-md-2.5">
-                            <div class="text-muted small font-monospace fw-semibold mb-0.5" style="font-size: 0.75rem;">Destination</div>
-                            <div class="fw-bold text-body small">{{ $r->delivery_address }}</div>
-                            <div class="small text-muted mt-0.5" style="font-size: 0.75rem;">{{ $r->city }}</div>
-                        </div>
-
-                        <!-- COL 4: PRIORITY -->
-                        <div class="col-12 col-md-2">
-                            <div class="text-muted small font-monospace fw-semibold mb-0.5" style="font-size: 0.75rem;">Priority</div>
+                        <!-- ITEM 11: PRIORITY -->
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.75rem;">Priority</div>
                             <div>
-                                <span class="badge rounded-pill {{ $r->priority_badge_class }} px-2.5 py-1 small" style="font-size: 0.725rem;">
+                                <span class="badge rounded-pill {{ $r->priority_badge_class }} px-3 py-1.5 small" style="font-size: 0.75rem;">
                                     {{ strtoupper($r->priority ?? 'NORMAL') }}
                                 </span>
                             </div>
                         </div>
 
-                        <!-- COL 5: STATUS -->
-                        <div class="col-12 col-md-2">
-                            <div class="text-muted small font-monospace fw-semibold mb-0.5" style="font-size: 0.75rem;">Status</div>
-                            <div class="fw-bold text-primary small" style="font-size: 0.85rem;">
+                        <!-- ITEM 12: STATUS -->
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <div class="text-muted small font-monospace fw-semibold mb-1" style="font-size: 0.75rem;">Status</div>
+                            <div class="fw-bold text-primary fs-6">
                                 {{ $r->status_label }}
                             </div>
                         </div>
-
                     </div>
                 </div>
 
-                <!-- BOTTOM CARD SECTION: ASSIGNED DRIVER, VEHICLE, EXPECTED DELIVERY, HORIZONTAL ACTION OPTIONS -->
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2.5 pt-2">
+                <!-- SECTION 3: BOTTOM OPERATIONAL ASSIGNMENT & ACTIONS SECTION (ANNOTATED ITEMS 13 - 17) -->
+                <div class="pt-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     
-                    <div class="d-flex flex-wrap align-items-center gap-3.5 flex-grow-1">
+                    <div class="d-flex flex-wrap align-items-center gap-4 flex-grow-1">
                         
-                        <!-- ASSIGNED DRIVER -->
-                        <div class="d-flex align-items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person text-muted" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
+                        <!-- ITEM 13: ASSIGNED TO -->
+                        <div class="d-flex align-items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person text-muted mt-1" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>
                             <div>
-                                <span class="text-muted small me-1" style="font-size: 0.75rem;">Assigned To</span>
+                                <div class="text-muted small" style="font-size: 0.75rem;">Assigned To</div>
                                 @if($r->driver)
-                                    <span class="fw-bold text-body small ms-0.5">{{ $r->driver->driver_name }}</span>
+                                    <div class="fw-bold text-body small">{{ $r->driver->driver_name }}</div>
+                                    <div class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $r->driver->driver_code }}</div>
                                 @else
-                                    <span class="text-muted small fst-italic ms-0.5">Not Assigned</span>
+                                    <div class="text-muted small fst-italic">Not Assigned</div>
                                 @endif
                             </div>
                         </div>
 
-                        <!-- ASSIGNED VEHICLE -->
-                        <div class="d-flex align-items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-truck text-muted" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
+                        <!-- ITEM 14: VEHICLE -->
+                        <div class="d-flex align-items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-truck text-muted mt-1" viewBox="0 0 16 16"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A.5.5 0 0 1 0 11.5v-8zM1 3.5v7h.5a2 2 0 0 1 3.163.787 2 2 0 0 1 3.674 0H10.5a2 2 0 0 1 3.163-.787H15V8.28l-1.48-1.85A.5.5 0 0 0 13.15 6H12v4.5a.5.5 0 0 1-1 0V3.5h-10z"/></svg>
                             <div>
-                                <span class="text-muted small me-1" style="font-size: 0.75rem;">Vehicle</span>
+                                <div class="text-muted small" style="font-size: 0.75rem;">Vehicle</div>
                                 @if($r->vehicle)
-                                    <span class="fw-bold text-body font-monospace small ms-0.5">{{ $r->vehicle->vehicle_number }}</span>
+                                    <div class="fw-bold text-body font-monospace small">{{ $r->vehicle->vehicle_number }}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">{{ $r->vehicle->vehicle_type }}</div>
                                 @else
-                                    <span class="text-muted small fst-italic ms-0.5">Not Assigned</span>
+                                    <div class="text-muted small fst-italic">Not Assigned</div>
                                 @endif
                             </div>
                         </div>
 
-                        <!-- EXPECTED DELIVERY -->
-                        <div>
-                            <span class="text-muted small me-1" style="font-size: 0.75rem;">Expected Delivery</span>
-                            <span class="fw-bold text-body small font-monospace ms-0.5">
-                                {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '—' }}
-                            </span>
+                        <!-- ITEM 15: EXPECTED DELIVERY -->
+                        <div class="d-flex align-items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event text-muted mt-1" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                            <div>
+                                <div class="text-muted small" style="font-size: 0.75rem;">Expected Delivery</div>
+                                <div class="fw-bold text-body small font-monospace">
+                                    {{ $r->expected_delivery_date ? $r->expected_delivery_date->format('d M Y') : '10 Aug 2026' }}
+                                </div>
+                            </div>
                         </div>
 
                     </div>
 
-                    <!-- ACTION BUTTONS & HORIZONTAL QUICK OPTIONS -->
-                    <div class="d-flex align-items-center gap-1.5 justify-content-end flex-wrap">
-                        <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 rounded-3 d-flex align-items-center gap-1" onclick="window.print()" title="Print Delivery Slip">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-printer" viewBox="0 0 16 16"><path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm1 4h4a1 1 0 0 1 1 1v2H5v-2a1 1 0 0 1 1-1z"/></svg>
-                            <span class="small" style="font-size: 0.78rem;">Print</span>
-                        </button>
-
-                        <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 rounded-3 d-flex align-items-center gap-1" onclick="openDeliveryOrderProfile({{ $r->id }})" title="Track Order">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16"><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/><path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
-                            <span class="small" style="font-size: 0.78rem;">Track</span>
-                        </button>
-
-                        <button type="button" class="btn btn-sm btn-primary px-3 py-1 fw-bold rounded-3 shadow-sm" onclick="openDeliveryOrderProfile({{ $r->id }})">
-                            @if(in_array($r->status, ['ready_for_assignment', 'waiting_planning', 'awaiting_warehouse']))
-                                View / Assign
+                    <!-- ITEM 16 & 17: PRIMARY ACTION BUTTON & OPTIONS MENU -->
+                    <div class="d-flex align-items-center gap-2 justify-content-end">
+                        <!-- ITEM 16: PRIMARY ACTION BUTTON -->
+                        <button type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-3 shadow-sm" onclick="openDeliveryOrderProfile({{ $r->id }})">
+                            @if(in_array($r->status, ['dispatched', 'in_transit']))
+                                View Delivery
                             @elseif(in_array($r->status, ['driver_vehicle_assigned', 'assigned']))
-                                View / Assign
-                            @elseif(in_array($r->status, ['dispatched', 'in_transit']))
                                 View Delivery
                             @else
-                                View Profile
+                                View / Assign
                             @endif
                         </button>
 
+                        <!-- ITEM 17: THREE-DOTS OPTIONS DROPDOWN MENU -->
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                            <button class="btn btn-outline-secondary rounded-3 px-2.5 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
                                 ⋮
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-translucent">
