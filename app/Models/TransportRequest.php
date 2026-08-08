@@ -52,6 +52,7 @@ class TransportRequest extends Model
         'delivered_at',
         'created_by',
         'assigned_driver_id',
+        'driver_vehicle_assignment_id',
     ];
 
     protected $casts = [
@@ -101,6 +102,16 @@ class TransportRequest extends Model
         return $this->belongsTo(Driver::class, 'driver_id');
     }
 
+    public function activeAssignment(): BelongsTo
+    {
+        return $this->belongsTo(DriverVehicleAssignment::class, 'driver_vehicle_assignment_id');
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(DriverVehicleAssignment::class, 'transport_request_id');
+    }
+
     public function acceptedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'accepted_by');
@@ -141,6 +152,7 @@ class TransportRequest extends Model
         return match($this->status) {
             'awaiting_warehouse' => 'Awaiting Warehouse',
             'ready_for_assignment' => 'Ready for Assignment',
+            'driver_vehicle_assigned', 'assigned' => 'Driver & Vehicle Assigned',
             'waiting_planning', 'pending_packaging' => 'Waiting Planning',
             'vehicle_assigned_pending' => 'Vehicle Assigned',
             'driver_assigned_pending' => 'Driver Assigned',
@@ -162,6 +174,7 @@ class TransportRequest extends Model
         return match($this->status) {
             'awaiting_warehouse' => 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
             'ready_for_assignment' => 'bg-success-subtle text-success border-success-subtle',
+            'driver_vehicle_assigned', 'assigned' => 'bg-info-subtle text-info border-info-subtle',
             'waiting_planning', 'pending_packaging' => 'bg-info-subtle text-info border-info-subtle',
             'vehicle_assigned_pending' => 'bg-info-subtle text-info border-info-subtle',
             'driver_assigned_pending' => 'bg-primary-subtle text-primary border-primary-subtle',
@@ -279,6 +292,17 @@ class TransportRequest extends Model
                 'icon' => '✅',
                 'status' => 'completed',
             ];
+
+            if ($this->driver_id && $this->vehicle_id) {
+                $assignment = $this->activeAssignment;
+                $events[] = [
+                    'title' => 'Driver & Vehicle Assigned',
+                    'description' => "Assigned Driver: {$this->driver_name} | Vehicle: {$this->vehicle_number}" . ($assignment ? " (Ref: {$assignment->assignment_number})" : ""),
+                    'timestamp' => $assignment?->assigned_at?->format('Y-m-d H:i:s') ?? $this->updated_at->format('Y-m-d H:i:s'),
+                    'icon' => '🚚',
+                    'status' => 'completed',
+                ];
+            }
         } else {
             $events[] = [
                 'title' => 'Awaiting Warehouse Completion',

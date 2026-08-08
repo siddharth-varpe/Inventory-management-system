@@ -759,7 +759,48 @@ class TransportController extends Controller
      */
     public function showDeliveryOrder(TransportRequest $deliveryOrder): JsonResponse
     {
-        $deliveryOrder->load(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip']);
+        $deliveryOrder->load(['salesOrder.customer', 'vehicle', 'driver', 'activeAssignment.driver', 'activeAssignment.vehicle', 'activeAssignment.assignedByUser']);
+
+        $eligibleDrivers = Driver::where('status', 'available')
+            ->whereNull('deactivated_at')
+            ->where(function ($q) {
+                $q->whereNull('suspended_at')->orWhere('status', '!=', 'suspended');
+            })
+            ->get()
+            ->filter(fn($d) => !$d->isLicenseExpired())
+            ->values()
+            ->map(fn($d) => [
+                'id' => $d->id,
+                'driver_code' => $d->driver_code,
+                'employee_id' => $d->employee_id,
+                'driver_name' => $d->driver_name,
+                'phone_number' => $d->phone_number,
+                'license_class' => $d->license_class,
+                'license_expiry' => $d->license_expiry_date?->format('Y-m-d'),
+                'status' => $d->status,
+                'status_label' => $d->status_label,
+                'status_badge_class' => $d->status_badge_class,
+            ]);
+
+        $eligibleVehicles = Vehicle::where('status', 'available')
+            ->where(function ($q) {
+                $q->where('maintenance_status', '!=', 'Under Repair')
+                  ->orWhereNull('maintenance_status');
+            })
+            ->whereNull('deactivated_at')
+            ->get()
+            ->map(fn($v) => [
+                'id' => $v->id,
+                'vehicle_code' => $v->vehicle_code,
+                'vehicle_number' => $v->vehicle_number,
+                'vehicle_type' => $v->vehicle_type,
+                'load_capacity_kg' => (float)$v->load_capacity_kg,
+                'volume_capacity_m3' => (float)$v->volume_capacity_m3,
+                'status' => $v->status,
+                'compliance_status' => $v->getDocumentComplianceStatus(now()),
+            ]);
+
+        $activeAssignment = $deliveryOrder->activeAssignment;
 
         return response()->json([
             'id' => $deliveryOrder->id,
@@ -773,7 +814,8 @@ class TransportController extends Controller
             'priority_badge_class' => $deliveryOrder->priority_badge_class,
             'expected_delivery_date' => $deliveryOrder->expected_delivery_date?->format('Y-m-d'),
             'package_count' => $deliveryOrder->package_count,
-            'weight_kg' => $deliveryOrder->weight_kg,
+            'weight_kg' => (float)$deliveryOrder->weight_kg,
+            'volume_m3' => (float)$deliveryOrder->volume_m3,
             'source_module' => $deliveryOrder->source_module ?? 'CRM Sales Order',
             'status' => $deliveryOrder->status,
             'status_label' => $deliveryOrder->status_label,
@@ -781,9 +823,206 @@ class TransportController extends Controller
             'warehouse_status_label' => $deliveryOrder->warehouse_status_label,
             'warehouse_status_badge_class' => $deliveryOrder->warehouse_status_badge_class,
             'warehouse_completed_at' => $deliveryOrder->warehouse_completed_at?->format('H:i, d M Y'),
-            'driver_name' => $deliveryOrder->driver_name ?? $deliveryOrder->driver?->driver_name,
-            'vehicle_number' => $deliveryOrder->vehicle_number ?? $deliveryOrder->vehicle?->vehicle_number,
+            'driver' => $deliveryOrder->driver ? [
+                'id' => $deliveryOrder->driver->id,
+                'driver_code' => $deliveryOrder->driver->driver_code,
+                'employee_id' => $deliveryOrder->driver->employee_id,
+                'driver_name' => $deliveryOrder->driver->driver_name,
+                'phone_number' => $deliveryOrder->driver->phone_number,
+                'license_class' => $deliveryOrder->driver->license_class,
+            ] : null,
+            'vehicle' => $deliveryOrder->vehicle ? [
+                'id' => $deliveryOrder->vehicle->id,
+                'vehicle_code' => $deliveryOrder->vehicle->vehicle_code,
+                'vehicle_number' => $deliveryOrder->vehicle->vehicle_number,
+                'vehicle_type' => $deliveryOrder->vehicle->vehicle_type,
+                'load_capacity_kg' => (float)$deliveryOrder->vehicle->load_capacity_kg,
+            ] : null,
+            'active_assignment' => $activeAssignment ? [
+                'id' => $activeAssignment->id,
+                'assignment_number' => $activeAssignment->assignment_number,
+                'driver_id' => $activeAssignment->driver_id,
+                'driver_name' => $activeAssignment->driver?->driver_name,
+                'driver_phone' => $activeAssignment->driver?->phone_number,
+                'vehicle_id' => $activeAssignment->vehicle_id,
+                'vehicle_number' => $activeAssignment->vehicle?->vehicle_number,
+                'vehicle_type' => $activeAssignment->vehicle?->vehicle_type,
+                'assigned_by_name' => $activeAssignment->assignedByUser?->name ?? 'Transport Manager',
+                'assigned_at' => $activeAssignment->assigned_at?->format('H:i, d M Y'),
+                'status' => $activeAssignment->status,
+                'status_label' => $activeAssignment->status_label,
+            ] : null,
+            'eligible_drivers' => $eligibleDrivers,
+            'eligible_vehicles' => $eligibleVehicles,
             'timeline' => $deliveryOrder->timeline_events,
         ]);
+    }
+
+    /**
+     * Phase 4 — Confirm Driver & Vehicle Assignment Endpoint
+     */
+    public function assignDriverAndVehicle(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'driver_id' => 'required|integer|exists:drivers,id',
+            'vehicle_id' => 'required|integer|exists:vehicles,id',
+            'instructions' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $assignment = $this->planningEngine->assignDriverAndVehicle(
+                $transportRequest,
+                (int)$validated['driver_id'],
+                (int)$validated['vehicle_id'],
+                auth()->id() ?? 1,
+                $validated['instructions'] ?? null
+            );
+
+            $message = "Driver and vehicle assigned successfully. (Assignment #{$assignment->assignment_number})";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'assignment_number' => $assignment->assignment_number,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Phase 4 — Controlled Reassign Endpoint
+     */
+    public function reassignDriverAndVehicle(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'new_driver_id' => 'required|integer|exists:drivers,id',
+            'new_vehicle_id' => 'required|integer|exists:vehicles,id',
+            'reassignment_reason' => 'required|string|min:3|max:1000',
+        ]);
+
+        try {
+            $assignment = $this->planningEngine->reassignDriverAndVehicle(
+                $transportRequest,
+                (int)$validated['new_driver_id'],
+                (int)$validated['new_vehicle_id'],
+                auth()->id() ?? 1,
+                $validated['reassignment_reason']
+            );
+
+            $message = "Driver and vehicle reassigned successfully. (New Assignment #{$assignment->assignment_number})";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'assignment_number' => $assignment->assignment_number,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Phase 4 — Search & Filter Eligible Drivers Endpoint
+     */
+    public function getEligibleDrivers(Request $request): JsonResponse
+    {
+        $search = trim($request->input('search', ''));
+
+        $query = Driver::where('status', 'available')
+            ->whereNull('deactivated_at')
+            ->where(function ($q) {
+                $q->whereNull('suspended_at')->orWhere('status', '!=', 'suspended');
+            });
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('driver_name', 'like', "%{$search}%")
+                  ->orWhere('driver_code', 'like', "%{$search}%")
+                  ->orWhere('employee_id', 'like', "%{$search}%")
+                  ->orWhere('phone_number', 'like', "%{$search}%");
+            });
+        }
+
+        $drivers = $query->orderBy('driver_name')->get()
+            ->filter(fn($d) => !$d->isLicenseExpired())
+            ->values()
+            ->map(fn($d) => [
+                'id' => $d->id,
+                'driver_code' => $d->driver_code,
+                'employee_id' => $d->employee_id,
+                'driver_name' => $d->driver_name,
+                'phone_number' => $d->phone_number,
+                'license_class' => $d->license_class,
+                'license_expiry' => $d->license_expiry_date?->format('Y-m-d'),
+                'status' => $d->status,
+                'status_label' => $d->status_label,
+            ]);
+
+        return response()->json($drivers);
+    }
+
+    /**
+     * Phase 4 — Search & Filter Eligible Vehicles Endpoint
+     */
+    public function getEligibleVehicles(Request $request): JsonResponse
+    {
+        $search = trim($request->input('search', ''));
+        $minCapacity = (float)$request->input('min_capacity_kg', 0.0);
+
+        $query = Vehicle::where('status', 'available')
+            ->where(function ($q) {
+                $q->where('maintenance_status', '!=', 'Under Repair')
+                  ->orWhereNull('maintenance_status');
+            })
+            ->whereNull('deactivated_at');
+
+        if ($minCapacity > 0) {
+            $query->where('load_capacity_kg', '>=', $minCapacity);
+        }
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('vehicle_number', 'like', "%{$search}%")
+                  ->orWhere('vehicle_code', 'like', "%{$search}%")
+                  ->orWhere('vehicle_type', 'like', "%{$search}%");
+            });
+        }
+
+        $vehicles = $query->orderBy('vehicle_number')->get()
+            ->map(fn($v) => [
+                'id' => $v->id,
+                'vehicle_code' => $v->vehicle_code,
+                'vehicle_number' => $v->vehicle_number,
+                'vehicle_type' => $v->vehicle_type,
+                'load_capacity_kg' => (float)$v->load_capacity_kg,
+                'volume_capacity_m3' => (float)$v->volume_capacity_m3,
+                'status' => $v->status,
+                'compliance_status' => $v->getDocumentComplianceStatus(now()),
+            ]);
+
+        return response()->json($vehicles);
     }
 }

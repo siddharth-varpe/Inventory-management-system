@@ -10,6 +10,8 @@ use App\Models\Vehicle;
 use App\Models\Driver;
 use App\Models\AuditLog;
 use App\Models\SalesOrder;
+use App\Models\DriverVehicleAssignment;
+use App\Models\DriverNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -292,6 +294,419 @@ class TransportPlanningEngine
             Log::info("TransportPlanning SUCCESS: Trip #{$trip->trip_number} created for Task #{$task->request_number} with Vehicle {$vehicle->vehicle_number} & Driver {$driver->driver_name}");
 
             return $trip;
+        });
+    }
+
+    /**
+     * Phase 4 — Atomic Driver & Vehicle Assignment with Concurrency Control & Capacity Validation
+     */
+    public function assignDriverAndVehicle(
+        TransportRequest $task,
+        int $driverId,
+        int $vehicleId,
+        int $operatorId,
+        ?string $instructions = null
+    ): DriverVehicleAssignment {
+        return DB::transaction(function () use ($task, $driverId, $vehicleId, $operatorId, $instructions) {
+            // 1. Lock Transport Task Row
+            $task = TransportRequest::where('id', $task->id)->lockForUpdate()->firstOrFail();
+
+            // Status Verification Guard
+            if ($task->status === 'awaiting_warehouse') {
+                throw new InvalidArgumentException("Transport Task #{$task->request_number} is AWAITING WAREHOUSE completion (Order #{$task->order_reference}). Vehicle & Driver assignments are locked until Organize Stock completes Pick & Pack and seals the shipment.");
+            }
+
+            if ($task->status === 'cancelled') {
+                throw new InvalidArgumentException("Transport Task #{$task->request_number} is CANCELLED and cannot be assigned.");
+            }
+
+            if (in_array($task->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+                throw new InvalidArgumentException("Cannot assign driver and vehicle to Transport Task #{$task->request_number} because it has already been dispatched.");
+            }
+
+            if ($task->status !== 'ready_for_assignment') {
+                throw new InvalidArgumentException("Cannot assign driver and vehicle to Transport Task #{$task->request_number} because its status is '{$task->status_label}'. Only orders in 'Ready for Assignment' status can be assigned.");
+            }
+
+            // 2. Lock Driver Row & Check Eligibility
+            $driver = Driver::where('id', $driverId)->lockForUpdate()->first();
+            if (!$driver) {
+                throw new InvalidArgumentException("Selected driver record does not exist.");
+            }
+
+            if ($driver->status !== 'available' || $driver->isSuspended() || $driver->isInactive() || $driver->isLicenseExpired()) {
+                throw new InvalidArgumentException("Driver {$driver->driver_name} is no longer available.");
+            }
+
+            // Active Assignment Check for Driver
+            $activeDriverAssignment = DriverVehicleAssignment::where('driver_id', $driverId)
+                ->where('status', 'active')
+                ->first();
+            if ($activeDriverAssignment) {
+                throw new InvalidArgumentException("Driver {$driver->driver_name} is no longer available.");
+            }
+
+            // 3. Lock Vehicle Row & Check Eligibility
+            $vehicle = Vehicle::where('id', $vehicleId)->lockForUpdate()->first();
+            if (!$vehicle) {
+                throw new InvalidArgumentException("Selected vehicle record does not exist.");
+            }
+
+            if ($vehicle->status !== 'available' || $vehicle->isUnderMaintenance() || $vehicle->isBreakdown() || $vehicle->isInactive()) {
+                throw new InvalidArgumentException("Vehicle {$vehicle->vehicle_number} is no longer available.");
+            }
+
+            // Active Assignment Check for Vehicle
+            $activeVehicleAssignment = DriverVehicleAssignment::where('vehicle_id', $vehicleId)
+                ->where('status', 'active')
+                ->first();
+            if ($activeVehicleAssignment) {
+                throw new InvalidArgumentException("Vehicle {$vehicle->vehicle_number} is no longer available.");
+            }
+
+            // 4. Capacity Validation (Weight & Volume)
+            $orderWeight = (float) ($task->weight_kg ?: 0.0);
+            $vehicleCapacity = (float) ($vehicle->load_capacity_kg ?: 0.0);
+            if ($orderWeight > 0 && $vehicleCapacity > 0 && $orderWeight > $vehicleCapacity) {
+                throw new InvalidArgumentException("Selected vehicle does not have sufficient capacity for this order.");
+            }
+
+            $orderVolume = (float) ($task->volume_m3 ?: 0.0);
+            $vehicleVolumeCapacity = (float) ($vehicle->volume_capacity_m3 ?: 0.0);
+            if ($orderVolume > 0 && $vehicleVolumeCapacity > 0 && $orderVolume > $vehicleVolumeCapacity) {
+                throw new InvalidArgumentException("Selected vehicle does not have sufficient capacity for this order.");
+            }
+
+            // 5. Generate Unique Assignment Identifier (e.g. ASN-000001)
+            $nextSeq = (int) (DriverVehicleAssignment::max('id') + 1);
+            $assignmentNumber = 'ASN-' . str_pad((string)$nextSeq, 6, '0', STR_PAD_LEFT);
+
+            while (DriverVehicleAssignment::where('assignment_number', $assignmentNumber)->exists()) {
+                $nextSeq++;
+                $assignmentNumber = 'ASN-' . str_pad((string)$nextSeq, 6, '0', STR_PAD_LEFT);
+            }
+
+            // 6. Create Canonical Assignment Record
+            $assignment = DriverVehicleAssignment::create([
+                'assignment_number' => $assignmentNumber,
+                'transport_request_id' => $task->id,
+                'sales_order_id' => $task->sales_order_id,
+                'enterprise_order_id' => $task->order_reference,
+                'driver_id' => $driver->id,
+                'vehicle_id' => $vehicle->id,
+                'assigned_by' => $operatorId,
+                'assigned_at' => now(),
+                'status' => 'active',
+                'instructions' => $instructions,
+            ]);
+
+            // 7. Update Transport Task Status
+            $task->update([
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->driver_name,
+                'vehicle_id' => $vehicle->id,
+                'vehicle_number' => $vehicle->vehicle_number,
+                'status' => 'driver_vehicle_assigned',
+                'driver_vehicle_assignment_id' => $assignment->id,
+            ]);
+
+            // 8. Update Driver Operational Status -> ON DELIVERY
+            $driver->update([
+                'status' => 'on_delivery',
+                'current_assignment' => "Assigned to Order #{$task->order_reference} (Task #{$task->request_number})",
+            ]);
+
+            // 9. Update Vehicle Operational Status -> ON TRIP
+            $vehicle->update([
+                'status' => 'on_trip',
+                'current_location' => "Assigned to Order #{$task->order_reference} (Task #{$task->request_number})",
+            ]);
+
+            // 10. Record Audit Log Events
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Assignment Created',
+                'table_name' => 'driver_vehicle_assignments',
+                'record_id' => $assignment->id,
+                'old_values' => null,
+                'new_values' => json_encode([
+                    'assignment_number' => $assignment->assignment_number,
+                    'enterprise_order_id' => $task->order_reference,
+                    'transport_task_id' => $task->request_number,
+                    'driver_id' => $driver->id,
+                    'driver_name' => $driver->driver_name,
+                    'vehicle_id' => $vehicle->id,
+                    'vehicle_number' => $vehicle->vehicle_number,
+                    'operator_id' => $operatorId,
+                    'timestamp' => now()->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System Console',
+            ]);
+
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Driver Assigned',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => null,
+                'new_values' => json_encode([
+                    'transport_task_id' => $task->request_number,
+                    'driver_name' => $driver->driver_name,
+                    'employee_id' => $driver->employee_id,
+                    'status' => 'ON DELIVERY',
+                    'timestamp' => now()->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System Console',
+            ]);
+
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Vehicle Assigned',
+                'table_name' => 'transport_requests',
+                'record_id' => $task->id,
+                'old_values' => null,
+                'new_values' => json_encode([
+                    'transport_task_id' => $task->request_number,
+                    'vehicle_number' => $vehicle->vehicle_number,
+                    'status' => 'ON TRIP',
+                    'timestamp' => now()->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System Console',
+            ]);
+
+            // 11. Queue Targeted Driver Notification
+            DriverNotification::create([
+                'driver_id' => $driver->id,
+                'assignment_id' => $assignment->id,
+                'title' => 'New Delivery Assigned',
+                'enterprise_order_id' => $task->order_reference,
+                'customer_name' => $task->customer_name ?? $task->salesOrder?->customer?->company_name ?? 'Customer',
+                'delivery_address' => $task->delivery_address,
+                'destination_city' => $task->city,
+                'package_count' => $task->package_count ?: 1,
+                'priority' => $task->priority ?: 'normal',
+                'required_delivery_date' => $task->required_dispatch_date ?? $task->expected_delivery_date,
+                'vehicle_registration_number' => $vehicle->vehicle_number,
+                'assignment_time' => now(),
+                'delivery_instructions' => $instructions,
+                'is_read' => false,
+            ]);
+
+            Log::info("TransportPlanning SUCCESS: Driver {$driver->driver_name} & Vehicle {$vehicle->vehicle_number} assigned to Order #{$task->order_reference} (Assignment #{$assignment->assignment_number})");
+
+            return $assignment;
+        });
+    }
+
+    /**
+     * Phase 4 — Controlled Driver & Vehicle Reassignment
+     */
+    public function reassignDriverAndVehicle(
+        TransportRequest $task,
+        int $newDriverId,
+        int $newVehicleId,
+        int $operatorId,
+        string $reassignmentReason
+    ): DriverVehicleAssignment {
+        return DB::transaction(function () use ($task, $newDriverId, $newVehicleId, $operatorId, $reassignmentReason) {
+            // 1. Lock Task
+            $task = TransportRequest::where('id', $task->id)->lockForUpdate()->firstOrFail();
+
+            // Dispatch Boundary Check
+            if (in_array($task->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+                throw new InvalidArgumentException("Cannot reassign order #{$task->order_reference} because it is already dispatched or in transit.");
+            }
+
+            if ($task->status === 'cancelled') {
+                throw new InvalidArgumentException("Cannot reassign order #{$task->order_reference} because it has been cancelled.");
+            }
+
+            // 2. Release Previous Assignment Records & Resources
+            $activeAssignment = DriverVehicleAssignment::where('transport_request_id', $task->id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($activeAssignment) {
+                $activeAssignment->update([
+                    'status' => 'reassigned',
+                    'reassignment_reason' => $reassignmentReason,
+                ]);
+            }
+
+            if ($task->driver_id) {
+                $oldDriver = Driver::where('id', $task->driver_id)->lockForUpdate()->first();
+                if ($oldDriver) {
+                    $oldDriver->update([
+                        'status' => 'available',
+                        'current_assignment' => null,
+                    ]);
+
+                    AuditLog::create([
+                        'user_id' => $operatorId,
+                        'module' => 'Transport Department',
+                        'action' => 'Driver Released',
+                        'table_name' => 'drivers',
+                        'record_id' => $oldDriver->id,
+                        'old_values' => null,
+                        'new_values' => json_encode([
+                            'driver_name' => $oldDriver->driver_name,
+                            'released_from_order' => $task->order_reference,
+                            'reason' => $reassignmentReason,
+                            'timestamp' => now()->toIso8601String(),
+                        ]),
+                        'ip_address' => request()->ip() ?? '127.0.0.1',
+                        'user_agent' => request()->userAgent() ?? 'System Console',
+                    ]);
+                }
+            }
+
+            if ($task->vehicle_id) {
+                $oldVehicle = Vehicle::where('id', $task->vehicle_id)->lockForUpdate()->first();
+                if ($oldVehicle) {
+                    $oldVehicle->update([
+                        'status' => 'available',
+                        'current_location' => 'Depot Yard',
+                    ]);
+
+                    AuditLog::create([
+                        'user_id' => $operatorId,
+                        'module' => 'Transport Department',
+                        'action' => 'Vehicle Released',
+                        'table_name' => 'vehicles',
+                        'record_id' => $oldVehicle->id,
+                        'old_values' => null,
+                        'new_values' => json_encode([
+                            'vehicle_number' => $oldVehicle->vehicle_number,
+                            'released_from_order' => $task->order_reference,
+                            'reason' => $reassignmentReason,
+                            'timestamp' => now()->toIso8601String(),
+                        ]),
+                        'ip_address' => request()->ip() ?? '127.0.0.1',
+                        'user_agent' => request()->userAgent() ?? 'System Console',
+                    ]);
+                }
+            }
+
+            // 3. Lock & Validate New Driver
+            $newDriver = Driver::where('id', $newDriverId)->lockForUpdate()->first();
+            if (!$newDriver) {
+                throw new InvalidArgumentException("Selected new driver record does not exist.");
+            }
+
+            if ($newDriver->status !== 'available' || $newDriver->isSuspended() || $newDriver->isInactive() || $newDriver->isLicenseExpired()) {
+                throw new InvalidArgumentException("Driver {$newDriver->driver_name} is no longer available.");
+            }
+
+            // 4. Lock & Validate New Vehicle
+            $newVehicle = Vehicle::where('id', $newVehicleId)->lockForUpdate()->first();
+            if (!$newVehicle) {
+                throw new InvalidArgumentException("Selected new vehicle record does not exist.");
+            }
+
+            if ($newVehicle->status !== 'available' || $newVehicle->isUnderMaintenance() || $newVehicle->isBreakdown() || $newVehicle->isInactive()) {
+                throw new InvalidArgumentException("Vehicle {$newVehicle->vehicle_number} is no longer available.");
+            }
+
+            // Capacity Check for New Vehicle
+            $orderWeight = (float) ($task->weight_kg ?: 0.0);
+            $vehicleCapacity = (float) ($newVehicle->load_capacity_kg ?: 0.0);
+            if ($orderWeight > 0 && $vehicleCapacity > 0 && $orderWeight > $vehicleCapacity) {
+                throw new InvalidArgumentException("Selected vehicle does not have sufficient capacity for this order.");
+            }
+
+            // 5. Generate New Assignment Number
+            $nextSeq = (int) (DriverVehicleAssignment::max('id') + 1);
+            $assignmentNumber = 'ASN-' . str_pad((string)$nextSeq, 6, '0', STR_PAD_LEFT);
+
+            while (DriverVehicleAssignment::where('assignment_number', $assignmentNumber)->exists()) {
+                $nextSeq++;
+                $assignmentNumber = 'ASN-' . str_pad((string)$nextSeq, 6, '0', STR_PAD_LEFT);
+            }
+
+            // 6. Create New Canonical Assignment Record
+            $newAssignment = DriverVehicleAssignment::create([
+                'assignment_number' => $assignmentNumber,
+                'transport_request_id' => $task->id,
+                'sales_order_id' => $task->sales_order_id,
+                'enterprise_order_id' => $task->order_reference,
+                'driver_id' => $newDriver->id,
+                'vehicle_id' => $newVehicle->id,
+                'assigned_by' => $operatorId,
+                'assigned_at' => now(),
+                'status' => 'active',
+                'reassignment_reason' => $reassignmentReason,
+            ]);
+
+            // 7. Update Task, Driver, and Vehicle Statuses
+            $task->update([
+                'driver_id' => $newDriver->id,
+                'driver_name' => $newDriver->driver_name,
+                'vehicle_id' => $newVehicle->id,
+                'vehicle_number' => $newVehicle->vehicle_number,
+                'status' => 'driver_vehicle_assigned',
+                'driver_vehicle_assignment_id' => $newAssignment->id,
+            ]);
+
+            $newDriver->update([
+                'status' => 'on_delivery',
+                'current_assignment' => "Reassigned to Order #{$task->order_reference} (Task #{$task->request_number})",
+            ]);
+
+            $newVehicle->update([
+                'status' => 'on_trip',
+                'current_location' => "Reassigned to Order #{$task->order_reference} (Task #{$task->request_number})",
+            ]);
+
+            // 8. Record Reassignment Audit Log
+            AuditLog::create([
+                'user_id' => $operatorId,
+                'module' => 'Transport Department',
+                'action' => 'Assignment Reassigned',
+                'table_name' => 'driver_vehicle_assignments',
+                'record_id' => $newAssignment->id,
+                'old_values' => json_encode(['previous_assignment' => $activeAssignment?->assignment_number]),
+                'new_values' => json_encode([
+                    'assignment_number' => $newAssignment->assignment_number,
+                    'enterprise_order_id' => $task->order_reference,
+                    'new_driver_id' => $newDriver->id,
+                    'new_driver_name' => $newDriver->driver_name,
+                    'new_vehicle_id' => $newVehicle->id,
+                    'new_vehicle_number' => $newVehicle->vehicle_number,
+                    'reason' => $reassignmentReason,
+                    'operator_id' => $operatorId,
+                    'timestamp' => now()->toIso8601String(),
+                ]),
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => request()->userAgent() ?? 'System Console',
+            ]);
+
+            // 9. Queue Notification for New Driver
+            DriverNotification::create([
+                'driver_id' => $newDriver->id,
+                'assignment_id' => $newAssignment->id,
+                'title' => 'New Delivery Assigned (Reassignment)',
+                'enterprise_order_id' => $task->order_reference,
+                'customer_name' => $task->customer_name ?? $task->salesOrder?->customer?->company_name ?? 'Customer',
+                'delivery_address' => $task->delivery_address,
+                'destination_city' => $task->city,
+                'package_count' => $task->package_count ?: 1,
+                'priority' => $task->priority ?: 'normal',
+                'required_delivery_date' => $task->required_dispatch_date ?? $task->expected_delivery_date,
+                'vehicle_registration_number' => $newVehicle->vehicle_number,
+                'assignment_time' => now(),
+                'delivery_instructions' => "Reassigned order. Reason: {$reassignmentReason}",
+                'is_read' => false,
+            ]);
+
+            Log::info("TransportPlanning REASSIGN SUCCESS: Order #{$task->order_reference} reassigned to Driver {$newDriver->driver_name} & Vehicle {$newVehicle->vehicle_number}");
+
+            return $newAssignment;
         });
     }
 }
