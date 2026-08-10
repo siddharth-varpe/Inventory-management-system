@@ -12,7 +12,7 @@
                     <span class="text-secondary small fw-medium">Welcome back,</span>
                     <h5 class="fw-extrabold text-white mb-0 mt-0.5">{{ $currentDriver->driver_name ?? 'Driver' }}</h5>
                     <div class="font-monospace text-info small fw-bold mt-1">
-                        {{ $currentDriver->driver_code ?? 'DRV-000001' }}
+                        {{ $currentDriver->driver_code ?? 'N/A' }}
                     </div>
                 </div>
                 <div class="text-end">

@@ -52,6 +52,14 @@ class Driver extends Model
     ];
 
     /**
+     * User account associated with this Driver Master profile.
+     */
+    public function user(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(User::class, 'driver_id');
+    }
+
+    /**
      * Permanent Transport Trip Assignments
      */
     public function trips(): HasMany

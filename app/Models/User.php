@@ -28,8 +28,17 @@ class User extends Authenticatable implements MustVerifyEmail
         'status',
         'branch_id',
         'department_id',
+        'driver_id',
         'last_login_at',
     ];
+
+    /**
+     * Driver Master relationship.
+     */
+    public function driver(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Driver::class, 'driver_id');
+    }
 
     /**
      * Branch relationship.

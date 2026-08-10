@@ -12,7 +12,7 @@
             </div>
             <h4 class="fw-extrabold text-white mb-0">{{ $currentDriver->driver_name ?? 'Driver Profile' }}</h4>
             <div class="font-monospace text-info small fw-bold mt-1 mb-2">
-                {{ $currentDriver->driver_code ?? 'DRV-000001' }}
+                {{ $currentDriver->driver_code ?? 'N/A' }}
             </div>
             <div>
                 <span class="badge {{ $currentDriver->status_badge_class ?? 'bg-success-subtle text-success border border-success-subtle' }} px-3 py-1 rounded-pill fs-7 fw-bold">

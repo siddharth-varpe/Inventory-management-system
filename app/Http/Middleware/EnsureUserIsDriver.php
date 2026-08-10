@@ -27,24 +27,28 @@ class EnsureUserIsDriver
             return redirect()->route('driver-terminal.login');
         }
 
-        // Identify associated driver profile from authenticated session
-        $driver = Driver::where('email', $user->email)
-            ->orWhere('phone_number', $user->phone ?? null)
-            ->orWhere('id', $user->driver_id ?? null)
-            ->first();
+        // 1. Resolve Driver Master relationship from authenticated session
+        $driver = null;
+        if (!empty($user->driver_id)) {
+            $driver = Driver::find($user->driver_id);
+        }
+        if (!$driver && !empty($user->email)) {
+            $driver = Driver::where('email', strtolower($user->email))->first();
+        }
+        if (!$driver && !empty($user->phone)) {
+            $driver = Driver::where('phone_number', $user->phone)->first();
+        }
 
-        // Admin/Superusers allowed for operations override
-        $isAdmin = in_array($user->role ?? '', ['admin', 'super_admin', 'transport_manager']);
-
-        if (!$driver && !$isAdmin) {
+        // 2. Reject unlinked accounts with 403 Forbidden (No admin bypass allowed)
+        if (!$driver) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Unauthorized driver access.'], 403);
+                return response()->json(['message' => 'Unauthorized driver access. Your account is not linked to a Driver Master profile.'], 403);
             }
             abort(403, 'Unauthorized Driver Access. Your account is not linked to a Driver Master profile.');
         }
 
-        // Driver status validation (Reject suspended/inactive drivers)
-        if ($driver && (in_array(strtolower($driver->status), ['suspended', 'inactive', 'deactivated']) || !empty($driver->deactivated_at))) {
+        // 3. Driver status validation (Reject suspended/inactive drivers)
+        if (in_array(strtolower($driver->status), ['suspended', 'inactive', 'deactivated']) || !empty($driver->deactivated_at)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Account access suspended or inactive. Please contact Transport Management.'], 403);
             }
@@ -52,13 +56,11 @@ class EnsureUserIsDriver
         }
 
         // Attach active driver context to request
-        if ($driver) {
-            $request->attributes->set('current_driver', $driver);
-        }
+        $request->attributes->set('current_driver', $driver);
 
-        // IDOR Protection: Prevent Driver A from accessing Driver B's delivery task
+        // 4. IDOR Protection: Prevent Driver A from accessing Driver B's delivery task
         $deliveryId = $request->route('id') ?? $request->route('delivery') ?? $request->route('transportRequest');
-        if ($deliveryId && $driver && !$isAdmin) {
+        if ($deliveryId) {
             $delivery = $deliveryId instanceof TransportRequest
                 ? $deliveryId
                 : TransportRequest::find($deliveryId);
