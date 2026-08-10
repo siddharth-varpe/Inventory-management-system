@@ -60,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\AutoAuthenticate::class,
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
             'permission' => \App\Http\Middleware\EnsureUserHasPermission::class,
+            'driver.auth' => \App\Http\Middleware\EnsureUserIsDriver::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

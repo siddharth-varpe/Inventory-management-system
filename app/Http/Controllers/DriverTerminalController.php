@@ -153,4 +153,44 @@ class DriverTerminalController extends Controller
             'trips' => $activeTrips,
         ]);
     }
+
+    /**
+     * Phase 0 Foundational Stub: Login Page (NO OTP)
+     */
+    public function login(): View
+    {
+        return view('driver-terminal.auth.login');
+    }
+
+    /**
+     * Phase 0 Foundational Stub: Deliveries List
+     */
+    public function deliveries(Request $request): View
+    {
+        return view('driver-terminal.deliveries.index');
+    }
+
+    /**
+     * Phase 0 Foundational Stub: Delivery Details
+     */
+    public function showDelivery(int $id): View
+    {
+        return view('driver-terminal.deliveries.show', ['deliveryId' => $id]);
+    }
+
+    /**
+     * Phase 0 Foundational Stub: Driver Profile
+     */
+    public function profile(): View
+    {
+        return view('driver-terminal.profile.index');
+    }
+
+    /**
+     * Phase 0 Foundational Stub: Notifications
+     */
+    public function notifications(): View
+    {
+        return view('driver-terminal.notifications.index');
+    }
 }
