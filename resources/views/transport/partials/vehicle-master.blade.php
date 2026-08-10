@@ -659,6 +659,16 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label small fw-bold text-body">Fuel Type *</label>
+                        <select name="fuel_type" class="form-select" required>
+                            <option value="Diesel" selected>Diesel</option>
+                            <option value="CNG">CNG</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Petrol">Petrol</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label small fw-bold text-body">Operational Load Capacity (kg) *</label>
                         <input type="number" name="load_capacity_kg" class="form-control font-monospace" placeholder="e.g. 10000" value="{{ old('load_capacity_kg', 10000) }}" required>
                     </div>

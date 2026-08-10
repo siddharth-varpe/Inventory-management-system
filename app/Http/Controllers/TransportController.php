@@ -494,7 +494,7 @@ class TransportController extends Controller
             'model' => 'required|string|max:100',
             'manufacturing_year' => 'nullable|integer|min:1990|max:' . (date('Y') + 1),
             'color' => 'nullable|string|max:50',
-            'fuel_type' => 'required|string|max:50',
+            'fuel_type' => 'nullable|string|max:50',
             'load_capacity_kg' => 'required|numeric|min:1',
             'volume_capacity_m3' => 'nullable|numeric|min:0.1',
             'current_odometer_km' => 'nullable|integer|min:0',
