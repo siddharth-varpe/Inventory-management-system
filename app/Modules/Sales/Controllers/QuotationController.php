@@ -19,13 +19,15 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use App\Services\Contracts\ProductServiceInterface;
 
 class QuotationController extends Controller
 {
     public function __construct(
         protected QuotationService $quotationService,
         protected CustomerPricingService $pricingService,
-        protected CommunicationEngineService $cceService
+        protected CommunicationEngineService $cceService,
+        protected ProductServiceInterface $productService
     ) {}
 
     /**
@@ -33,32 +35,18 @@ class QuotationController extends Controller
      */
     public function workspace(Request $request): View
     {
-        $productsQuery = Product::with(['category', 'brand', 'unit', 'tax'])->where('status', 'active');
-
-        if ($request->filled('search')) {
-            $search = trim($request->input('search'));
-            $productsQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%");
-            });
+        $filters = $request->only(['search', 'category_id', 'brand_id', 'status', 'stock_status', 'sort_by', 'sort_dir']);
+        if (!isset($filters['status'])) {
+            $filters['status'] = 'active';
         }
 
-        if ($request->filled('category_id')) {
-            $productsQuery->where('category_id', $request->input('category_id'));
-        }
-        if ($request->filled('brand_id')) {
-            $productsQuery->where('brand_id', $request->input('brand_id'));
-        }
-
-        $products = $productsQuery->paginate(12)->withQueryString();
+        $products = $this->productService->getCatalog($filters, 15);
 
         $categories = Category::all();
         $brands = Brand::all();
         $customers = Customer::where('status', 'active')->with('addresses')->get();
 
-        return view('sales.workspace', compact('products', 'categories', 'brands', 'customers'));
+        return view('sales.workspace', compact('products', 'categories', 'brands', 'customers', 'filters'));
     }
 
     /**
@@ -140,7 +128,7 @@ class QuotationController extends Controller
 
         $quotation->load(['customer', 'items.product.category', 'items.product.unit', 'items.product.tax']);
 
-        $products = Product::with(['category', 'brand', 'unit', 'tax'])->where('status', 'active')->get();
+        $products = $this->productService->getCatalog(['status' => 'active'], 100);
         $categories = Category::all();
         $brands = Brand::all();
         $customers = Customer::where('status', 'active')->with('addresses')->get();
@@ -205,7 +193,7 @@ class QuotationController extends Controller
     {
         if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
             return redirect()->route('sales.quotations.show', $quotation->id)
-                ->with('error', "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be deleted.");
+                ->with('error', "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be edited.");
         }
 
         try {
@@ -223,19 +211,14 @@ class QuotationController extends Controller
      */
     public function searchProducts(Request $request): JsonResponse
     {
-        $query = Product::with(['category', 'brand', 'unit', 'tax'])->where('status', 'active');
+        $filters = [
+            'search' => $request->input('q'),
+            'status' => 'active',
+        ];
 
-        if ($request->filled('q')) {
-            $s = trim($request->input('q'));
-            $query->where(function ($q) use ($s) {
-                $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('sku', 'like', "%{$s}%")
-                  ->orWhere('code', 'like', "%{$s}%")
-                  ->orWhere('barcode', 'like', "%{$s}%");
-            });
-        }
+        $paginator = $this->productService->getCatalog($filters, 30);
 
-        $products = $query->take(30)->get()->map(function ($p) {
+        $products = collect($paginator->items())->map(function ($p) {
             $available = max(0, (int)$p->physical_stock - (int)($p->reserved_stock ?? 0));
             return [
                 'id' => $p->id,
