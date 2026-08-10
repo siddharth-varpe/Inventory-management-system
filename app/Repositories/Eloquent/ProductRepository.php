@@ -64,14 +64,13 @@ class ProductRepository extends EloquentBaseRepository implements ProductReposit
         if (!empty($filters['stock_status'])) {
             switch ($filters['stock_status']) {
                 case 'low':
-                    $query->whereColumn('physical_stock', '<=', 'reorder_level')
-                          ->where('physical_stock', '>', 0);
+                    $query->lowStock();
                     break;
                 case 'out_of_stock':
-                    $query->where('physical_stock', '<=', 0);
+                    $query->outOfStock();
                     break;
                 case 'in_stock':
-                    $query->where('physical_stock', '>', 0);
+                    $query->inStock();
                     break;
             }
         }

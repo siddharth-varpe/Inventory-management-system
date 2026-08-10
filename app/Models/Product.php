@@ -166,17 +166,54 @@ class Product extends Model
     }
 
     /**
+     * Boot model events for automatic stock availability synchronization.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product) {
+            $physical = (int) ($product->physical_stock ?? 0);
+            $reserved = (int) ($product->reserved_stock ?? 0);
+            $product->available_stock = max(0, $physical - $reserved);
+        });
+    }
+
+    /**
+     * Canonical Scope: Out of stock products (available_stock <= 0)
+     */
+    public function scopeOutOfStock($query)
+    {
+        return $query->whereRaw('physical_stock - reserved_stock <= 0');
+    }
+
+    /**
+     * Canonical Scope: Low stock products (0 < available_stock <= reorder_level)
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereRaw('physical_stock - reserved_stock > 0 AND physical_stock - reserved_stock <= reorder_level');
+    }
+
+    /**
+     * Canonical Scope: In stock products (available_stock > 0)
+     */
+    public function scopeInStock($query)
+    {
+        return $query->whereRaw('physical_stock - reserved_stock > 0');
+    }
+
+    /**
      * Dynamic Stock Status Badge Text
      */
     public function getStockStatusAttribute(): string
     {
-        if ($this->physical_stock <= 0) {
+        $available = max(0, (int) ($this->physical_stock ?? 0) - (int) ($this->reserved_stock ?? 0));
+        if ($available <= 0) {
             return 'out_of_stock';
         }
-        if ($this->physical_stock <= $this->min_stock) {
+        if ($this->min_stock > 0 && $available <= $this->min_stock) {
             return 'critical';
         }
-        if ($this->physical_stock <= $this->reorder_level) {
+        if ($this->reorder_level > 0 && $available <= $this->reorder_level) {
             return 'low';
         }
         return 'normal';

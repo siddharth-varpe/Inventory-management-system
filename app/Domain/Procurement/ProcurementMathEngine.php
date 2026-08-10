@@ -44,7 +44,10 @@ class ProcurementMathEngine
     public function updateWeightedAverageCost(Product $product, int $receivedQty, float $unitCost): float
     {
         return DB::transaction(function () use ($product, $receivedQty, $unitCost) {
-            $currentStock = (int) Inventory::where('product_id', $product->id)->sum('quantity');
+            $hasLots = Inventory::where('product_id', $product->id)->exists();
+            $currentStock = $hasLots
+                ? (int) Inventory::where('product_id', $product->id)->sum('quantity')
+                : (int) $product->physical_stock;
             $currentCost = (float) $product->cost_price;
 
             $currentValuation = $currentStock * $currentCost;

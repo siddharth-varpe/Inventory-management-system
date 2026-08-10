@@ -26,7 +26,10 @@ class EnterpriseSyncEngine implements SyncEngineInterface
         if (isset($payload['product_id'])) {
             $product = Product::find($payload['product_id']);
             if ($product) {
-                $physicalStock = (int) Inventory::where('product_id', $product->id)->sum('quantity');
+                $hasLots = Inventory::where('product_id', $product->id)->exists();
+                $physicalStock = $hasLots
+                    ? (int) Inventory::where('product_id', $product->id)->sum('quantity')
+                    : (int) $product->physical_stock;
                 $reservedStock = (int) $product->reserved_stock;
                 $availableStock = max(0, $physicalStock - $reservedStock);
                 $status = ($availableStock > 0) ? 'active' : (($physicalStock > 0) ? 'active' : 'out_of_stock');
