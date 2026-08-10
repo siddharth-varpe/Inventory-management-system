@@ -35,75 +35,28 @@ class DriverTerminalController extends Controller
                 ->first();
         }
 
-        if ($request->is('driver-terminal*') || $request->routeIs('driver-terminal.*')) {
-            $driverId = $currentDriver?->id;
+        $driverId = $currentDriver?->id;
 
-            $assignedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count() : 0;
-            $dispatchedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count() : 0;
-            $completedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count() : 0;
+        $assignedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count() : 0;
+        $dispatchedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count() : 0;
+        $completedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count() : 0;
 
-            $activeDelivery = $driverId ? TransportRequest::with(['salesOrder.customer', 'vehicle'])
-                ->where('driver_id', $driverId)
-                ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
-                ->latest()
-                ->first() : null;
+        $activeDelivery = $driverId ? TransportRequest::with(['salesOrder.customer', 'vehicle'])
+            ->where('driver_id', $driverId)
+            ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
+            ->latest()
+            ->first() : null;
 
-            $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
+        $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
 
-            return view('driver-terminal.home.index', [
-                'currentDriver' => $currentDriver,
-                'assignedCount' => $assignedCount,
-                'dispatchedCount' => $dispatchedCount,
-                'completedCount' => $completedCount,
-                'activeDelivery' => $activeDelivery,
-                'assignedVehicle' => $assignedVehicle,
-            ]);
-        }
-
-        $allDrivers = Driver::orderBy('driver_name')->get();
-
-        if (!$currentDriver) {
-            return view('driver.index', [
-                'activeTrips' => collect(),
-                'completedTrips' => collect(),
-                'selectedTrip' => null,
-                'selectedTask' => null,
-                'currentDriver' => null,
-                'allDrivers' => $allDrivers,
-            ]);
-        }
-
-        // Active Trips assigned to Driver (Sorted: Highest Priority -> Oldest Dispatch)
-        $activeTrips = TransportTrip::with(['vehicle', 'driver', 'dispatchManifest', 'transportRequests.salesOrder.customer', 'transportRequests.deliveryTimelines'])
-            ->where('driver_id', $currentDriver->id)
-            ->whereIn('status', ['created', 'ready', 'dispatched'])
-            ->get()
-            ->sortBy([
-                function ($trip) {
-                    $hasUrgent = $trip->transportRequests->contains(fn($r) => strtolower($r->priority) === 'urgent');
-                    $hasHigh = $trip->transportRequests->contains(fn($r) => strtolower($r->priority) === 'high');
-                    return $hasUrgent ? 1 : ($hasHigh ? 2 : 3);
-                },
-                function ($trip) {
-                    return $trip->dispatched_at ? $trip->dispatched_at->timestamp : $trip->created_at->timestamp;
-                }
-            ]);
-
-        // Completed Trips History
-        $completedTrips = TransportTrip::with(['vehicle', 'driver', 'dispatchManifest', 'transportRequests.salesOrder.customer'])
-            ->where('driver_id', $currentDriver->id)
-            ->whereIn('status', ['completed', 'returned', 'cancelled'])
-            ->orderBy('updated_at', 'desc')
-            ->take(15)
-            ->get();
-
-        $selectedTripId = $request->get('trip_id', $activeTrips->first()?->id);
-        $selectedTrip = $selectedTripId ? TransportTrip::with(['vehicle', 'driver', 'dispatchManifest', 'transportRequests.salesOrder.customer', 'transportRequests.deliveryTimelines'])->find($selectedTripId) : null;
-
-        $selectedTaskId = $request->get('task_id', $selectedTrip?->transportRequests->first()?->id);
-        $selectedTask = $selectedTaskId ? TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver', 'transportTrip', 'dispatchManifest', 'deliveryTimelines'])->find($selectedTaskId) : null;
-
-        return view('driver.index', compact('activeTrips', 'completedTrips', 'selectedTrip', 'selectedTask', 'currentDriver', 'allDrivers'));
+        return view('driver-terminal.home.index', [
+            'currentDriver' => $currentDriver,
+            'assignedCount' => $assignedCount,
+            'dispatchedCount' => $dispatchedCount,
+            'completedCount' => $completedCount,
+            'activeDelivery' => $activeDelivery,
+            'assignedVehicle' => $assignedVehicle,
+        ]);
     }
 
     /**

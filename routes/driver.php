@@ -17,15 +17,10 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Legacy /driver Prefix Group
+| Canonical Driver Terminal Routes (/driver & /driver-terminal)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified'])->prefix('driver')->name('driver.')->group(function () {
-    Route::get('/', [DriverTerminalController::class, 'index'])->name('index');
-    Route::get('/live-sync', [DriverTerminalController::class, 'liveSync'])->name('live-sync');
-    Route::post('/trips/{transportTrip}/accept', [DriverTerminalController::class, 'acceptTrip'])->name('accept-trip');
-    Route::post('/requests/{transportRequest}/update-status', [DriverTerminalController::class, 'updateStatus'])->name('update-status');
-});
+Route::middleware(['driver.auth'])->get('/driver', [DriverTerminalController::class, 'index'])->name('driver.index');
 
 /*
 |--------------------------------------------------------------------------
