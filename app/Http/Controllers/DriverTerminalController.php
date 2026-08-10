@@ -36,8 +36,27 @@ class DriverTerminalController extends Controller
         }
 
         if ($request->is('driver-terminal*') || $request->routeIs('driver-terminal.*')) {
+            $driverId = $currentDriver?->id;
+
+            $assignedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count() : 0;
+            $dispatchedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count() : 0;
+            $completedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count() : 0;
+
+            $activeDelivery = $driverId ? TransportRequest::with(['salesOrder.customer', 'vehicle'])
+                ->where('driver_id', $driverId)
+                ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
+                ->latest()
+                ->first() : null;
+
+            $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
+
             return view('driver-terminal.home.index', [
                 'currentDriver' => $currentDriver,
+                'assignedCount' => $assignedCount,
+                'dispatchedCount' => $dispatchedCount,
+                'completedCount' => $completedCount,
+                'activeDelivery' => $activeDelivery,
+                'assignedVehicle' => $assignedVehicle,
             ]);
         }
 
@@ -280,11 +299,33 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Phase 0 Foundational Stub: Driver Profile
+     * Phase 2 — Driver Profile Page (Read-Only)
      */
-    public function profile(): View
+    public function profile(Request $request): View
     {
-        return view('driver-terminal.profile.index');
+        $currentDriver = $request->attributes->get('current_driver');
+
+        if (!$currentDriver && auth()->check()) {
+            $user = auth()->user();
+            $currentDriver = Driver::where('email', $user->email)
+                ->orWhere('phone_number', $user->phone ?? null)
+                ->orWhere('id', $user->driver_id ?? null)
+                ->first();
+        }
+
+        $driverId = $currentDriver?->id;
+        $activeDelivery = $driverId ? TransportRequest::with('vehicle')
+            ->where('driver_id', $driverId)
+            ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
+            ->latest()
+            ->first() : null;
+
+        $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
+
+        return view('driver-terminal.profile.index', [
+            'currentDriver' => $currentDriver,
+            'assignedVehicle' => $assignedVehicle,
+        ]);
     }
 
     /**
