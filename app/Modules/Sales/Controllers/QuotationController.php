@@ -105,20 +105,160 @@ class QuotationController extends Controller
             return redirect()->back()->with('error', 'Sales Cart is empty. Please add products to cart before generating quotation.');
         }
 
-        $quotation = $this->quotationService->createQuotation(
-            $customer,
-            auth()->id() ?? 1,
-            $cartItems,
-            [
-                'validity_days' => $validated['validity_days'] ?? 30,
-                'delivery_terms' => $validated['delivery_terms'] ?? null,
-                'payment_terms' => $validated['payment_terms'] ?? null,
-                'remarks' => $validated['remarks'] ?? null,
-            ]
-        );
+        try {
+            $quotation = $this->quotationService->createQuotation(
+                $customer,
+                auth()->id() ?? 1,
+                $cartItems,
+                [
+                    'validity_days' => $validated['validity_days'] ?? 30,
+                    'delivery_terms' => $validated['delivery_terms'] ?? null,
+                    'payment_terms' => $validated['payment_terms'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                ]
+            );
 
-        return redirect()->route('sales.quotations.show', $quotation->id)
-            ->with('success', "Quotation {$quotation->quotation_number} generated & prepared for Customer Communication (CCE)! Status: " . strtoupper($quotation->status));
+            return redirect()->route('sales.quotations.show', $quotation->id)
+                ->with('success', "Quotation {$quotation->quotation_number} generated & prepared for Customer Communication (CCE)! Status: " . strtoupper($quotation->status));
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("QuotationController store exception: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Unable to create quotation. Please check item stock availability and try again.');
+        }
+    }
+
+    /**
+     * Edit Quotation Workspace
+     */
+    public function edit(Quotation $quotation)
+    {
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            return redirect()->route('sales.quotations.show', $quotation->id)
+                ->with('error', "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be edited.");
+        }
+
+        $quotation->load(['customer', 'items.product.category', 'items.product.unit', 'items.product.tax']);
+
+        $products = Product::with(['category', 'brand', 'unit', 'tax'])->where('status', 'active')->get();
+        $categories = Category::all();
+        $brands = Brand::all();
+        $customers = Customer::where('status', 'active')->with('addresses')->get();
+
+        return view('sales.quotations.edit', compact('quotation', 'products', 'categories', 'brands', 'customers'));
+    }
+
+    /**
+     * Update Existing Quotation
+     */
+    public function update(Request $request, Quotation $quotation): RedirectResponse
+    {
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            return redirect()->route('sales.quotations.show', $quotation->id)
+                ->with('error', "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be edited.");
+        }
+
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'validity_days' => 'nullable|integer|min:1',
+            'delivery_terms' => 'nullable|string',
+            'payment_terms' => 'nullable|string',
+            'remarks' => 'nullable|string',
+            'cart_data' => 'required|string',
+        ]);
+
+        $customer = Customer::findOrFail($validated['customer_id']);
+        $cartItems = json_decode($validated['cart_data'], true);
+
+        if (empty($cartItems)) {
+            return redirect()->back()->with('error', 'Quotation must have at least one product item.');
+        }
+
+        try {
+            $updatedQuotation = $this->quotationService->updateQuotation(
+                $quotation,
+                $customer,
+                auth()->id() ?? 1,
+                $cartItems,
+                [
+                    'validity_days' => $validated['validity_days'] ?? 30,
+                    'delivery_terms' => $validated['delivery_terms'] ?? null,
+                    'payment_terms' => $validated['payment_terms'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                ]
+            );
+
+            return redirect()->route('sales.quotations.show', $updatedQuotation->id)
+                ->with('success', "Quotation {$updatedQuotation->quotation_number} updated successfully!");
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("QuotationController update error for #{$quotation->quotation_number}: " . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Unable to update quotation. Please check item stock availability and try again.');
+        }
+    }
+
+    /**
+     * Delete Quotation
+     */
+    public function destroy(Quotation $quotation): RedirectResponse
+    {
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            return redirect()->route('sales.quotations.show', $quotation->id)
+                ->with('error', "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be deleted.");
+        }
+
+        try {
+            $qNum = $quotation->quotation_number;
+            $this->quotationService->deleteQuotation($quotation);
+            return redirect()->route('sales.quotations.index')
+                ->with('success', "Quotation #{$qNum} deleted successfully.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Search Canonical Product Catalog via API (JSON)
+     */
+    public function searchProducts(Request $request): JsonResponse
+    {
+        $query = Product::with(['category', 'brand', 'unit', 'tax'])->where('status', 'active');
+
+        if ($request->filled('q')) {
+            $s = trim($request->input('q'));
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('sku', 'like', "%{$s}%")
+                  ->orWhere('code', 'like', "%{$s}%")
+                  ->orWhere('barcode', 'like', "%{$s}%");
+            });
+        }
+
+        $products = $query->take(30)->get()->map(function ($p) {
+            $available = max(0, (int)$p->physical_stock - (int)($p->reserved_stock ?? 0));
+            return [
+                'id' => $p->id,
+                'code' => $p->code ?? "PRD-{$p->id}",
+                'sku' => $p->sku,
+                'name' => $p->name,
+                'category_name' => $p->category->name ?? 'General',
+                'brand_name' => $p->brand->name ?? 'Generic',
+                'unit_code' => $p->unit->code ?? 'Pcs',
+                'selling_price' => (float)$p->selling_price,
+                'gst_rate' => (float)($p->tax->rate ?? 18.00),
+                'physical_stock' => (int)$p->physical_stock,
+                'reserved_stock' => (int)($p->reserved_stock ?? 0),
+                'available_stock' => $available,
+                'is_out_of_stock' => ($available <= 0),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'count' => count($products),
+            'products' => $products,
+        ]);
     }
 
     /**

@@ -45,12 +45,28 @@ class QuotationService
             $maxDiscountApplied = 0.0;
 
             foreach ($cartItems as $item) {
-                $product = Product::findOrFail($item['product_id']);
+                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
                 if ($product->status !== 'active') {
                     throw new InvalidArgumentException("Product '{$product->name}' is inactive and cannot be added to a quotation.");
                 }
 
-                $qty = max(1, (int)$item['quantity']);
+                $qty = (int)($item['quantity'] ?? 0);
+                if ($qty <= 0) {
+                    throw new InvalidArgumentException("Product quantity for '{$product->name}' must be greater than zero.");
+                }
+
+                $physical = (int)$product->physical_stock;
+                $reserved = (int)$product->reserved_stock;
+                $available = max(0, $physical - $reserved);
+
+                if ($available <= 0) {
+                    throw new InvalidArgumentException("Product '{$product->name}' (SKU: {$product->sku}) is currently OUT OF STOCK (Available: 0).");
+                }
+
+                if ($qty > $available) {
+                    $shortage = $qty - $available;
+                    throw new InvalidArgumentException("Insufficient Stock for '{$product->name}' (SKU: {$product->sku}). Requested: {$qty}, Available: {$available}, Shortage: {$shortage}.");
+                }
 
                 $unitCost = (float)$product->cost_price;
                 $unitPrice = isset($item['unit_price']) ? (float)$item['unit_price'] : $this->pricingService->getCustomerPrice($product, $customer);
@@ -175,6 +191,161 @@ class QuotationService
             $cceRecord->logAudit("PDF_PREPARED", $userId, "Sales", ['pdf_reference' => $pdfRef]);
 
             return $quotation;
+        });
+    }
+
+    /**
+     * Update an existing Quotation with new cart items & metadata.
+     * Enforces converted protection & real-time stock validation.
+     */
+    public function updateQuotation(Quotation $quotation, Customer $customer, int $userId, array $cartItems, array $options = []): Quotation
+    {
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            throw new InvalidArgumentException("Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be edited.");
+        }
+
+        return DB::transaction(function () use ($quotation, $customer, $userId, $cartItems, $options) {
+            $validityDays = (int)($options['validity_days'] ?? 30);
+            $validityDate = Carbon::now()->addDays($validityDays)->toDateString();
+
+            $subtotal = 0.00;
+            $totalTaxable = 0.00;
+            $totalCgst = 0.00;
+            $totalSgst = 0.00;
+            $totalIgst = 0.00;
+            $totalTax = 0.00;
+            $grandTotal = 0.00;
+
+            $itemsToCreate = [];
+            $maxDiscountApplied = 0.0;
+
+            foreach ($cartItems as $item) {
+                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+                if ($product->status !== 'active') {
+                    throw new InvalidArgumentException("Product '{$product->name}' is inactive and cannot be added to a quotation.");
+                }
+
+                $qty = (int)($item['quantity'] ?? 0);
+                if ($qty <= 0) {
+                    throw new InvalidArgumentException("Product quantity for '{$product->name}' must be greater than zero.");
+                }
+
+                $physical = (int)$product->physical_stock;
+                $reserved = (int)$product->reserved_stock;
+                $available = max(0, $physical - $reserved);
+
+                if ($available <= 0) {
+                    throw new InvalidArgumentException("Product '{$product->name}' (SKU: {$product->sku}) is currently OUT OF STOCK (Available: 0).");
+                }
+
+                if ($qty > $available) {
+                    $shortage = $qty - $available;
+                    throw new InvalidArgumentException("Insufficient Stock for '{$product->name}' (SKU: {$product->sku}). Requested: {$qty}, Available: {$available}, Shortage: {$shortage}.");
+                }
+
+                $unitCost = (float)$product->cost_price;
+                $unitPrice = isset($item['unit_price']) ? (float)$item['unit_price'] : $this->pricingService->getCustomerPrice($product, $customer);
+
+                $discountType = $item['discount_type'] ?? 'percentage';
+                $discountVal = (float)($item['discount_amount'] ?? 0);
+
+                if ($discountType === 'percentage') {
+                    $lineDiscount = round(($unitPrice * $qty) * ($discountVal / 100.0), 2);
+                    $maxDiscountApplied = max($maxDiscountApplied, $discountVal);
+                } else {
+                    $lineDiscount = round($discountVal, 2);
+                }
+
+                $lineSubtotal = round($unitPrice * $qty, 2);
+                $lineTaxable = max(0.00, $lineSubtotal - $lineDiscount);
+
+                $gstRate = (float)($product->tax->rate ?? 18.00);
+                $taxSplit = $this->gstCalculator->calculateTax($lineTaxable, $gstRate, $customer);
+
+                $lineGst = $taxSplit['total_tax'];
+                $lineTotal = $lineTaxable + $lineGst;
+
+                $subtotal += $lineSubtotal;
+                $totalTaxable += $lineTaxable;
+                $totalCgst += $taxSplit['cgst'];
+                $totalSgst += $taxSplit['sgst'];
+                $totalIgst += $taxSplit['igst'];
+                $totalTax += $lineGst;
+                $grandTotal += $lineTotal;
+
+                $itemsToCreate[] = [
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'unit_cost' => $unitCost,
+                    'unit_price' => $unitPrice,
+                    'discount_type' => $discountType,
+                    'discount_amount' => $discountVal,
+                    'taxable_value' => $lineTaxable,
+                    'gst_rate' => $gstRate,
+                    'gst_amount' => $lineGst,
+                    'line_total' => $lineTotal,
+                    'remarks' => $item['remarks'] ?? null,
+                ];
+            }
+
+            $orderDiscountVal = (float)($options['order_discount_amount'] ?? 0);
+            $orderDiscountType = $options['order_discount_type'] ?? 'fixed';
+
+            if ($orderDiscountVal > 0) {
+                if ($orderDiscountType === 'percentage') {
+                    $orderDiscountAmt = round($totalTaxable * ($orderDiscountVal / 100.0), 2);
+                } else {
+                    $orderDiscountAmt = $orderDiscountVal;
+                }
+                $totalTaxable = max(0.00, $totalTaxable - $orderDiscountAmt);
+                $grandTotal = $totalTaxable + $totalTax;
+            } else {
+                $orderDiscountAmt = 0.00;
+            }
+
+            $requiresApproval = ($grandTotal >= 500000.00 || $maxDiscountApplied >= 20.0);
+            $status = $requiresApproval ? 'pending_approval' : ($quotation->status === 'rejected' ? 'draft' : $quotation->status);
+
+            $quotation->update([
+                'customer_id' => $customer->id,
+                'validity_date' => $validityDate,
+                'status' => $status,
+                'subtotal' => $subtotal,
+                'order_discount_type' => $orderDiscountType,
+                'order_discount_amount' => $orderDiscountAmt,
+                'taxable_amount' => $totalTaxable,
+                'cgst_amount' => $totalCgst,
+                'sgst_amount' => $totalSgst,
+                'igst_amount' => $totalIgst,
+                'tax_amount' => $totalTax,
+                'grand_total' => $grandTotal,
+                'delivery_terms' => $options['delivery_terms'] ?? $quotation->delivery_terms,
+                'payment_terms' => $options['payment_terms'] ?? $customer->payment_term,
+                'remarks' => $options['remarks'] ?? $quotation->remarks,
+            ]);
+
+            $quotation->items()->delete();
+            foreach ($itemsToCreate as $itemData) {
+                $quotation->items()->create($itemData);
+            }
+
+            return $quotation;
+        });
+    }
+
+    /**
+     * Delete an existing Quotation.
+     * Enforces converted protection & database safety.
+     */
+    public function deleteQuotation(Quotation $quotation): void
+    {
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            throw new InvalidArgumentException("Quotation #{$quotation->quotation_number} has already been converted to a Sales Order and cannot be deleted.");
+        }
+
+        DB::transaction(function () use ($quotation) {
+            $quotation->items()->delete();
+            $quotation->delete();
         });
     }
 

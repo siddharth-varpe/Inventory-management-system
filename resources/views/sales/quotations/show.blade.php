@@ -51,11 +51,15 @@
                 <!-- Right: Dedicated Document Actions Buttons Panel -->
                 <div class="d-flex flex-wrap align-items-center gap-2">
 
-                    <!-- Actions for DRAFT status -->
-                    @if($quotation->status === 'draft')
-                        <a href="{{ route('sales.workspace', ['quotation_id' => $quotation->id]) }}" class="btn btn-outline-primary rounded-3 fw-semibold d-flex align-items-center gap-1.5">
+                    <!-- Edit Action (Allowed for non-converted quotations) -->
+                    @if($quotation->status !== 'converted' && !$quotation->sales_order_id)
+                        <a href="{{ route('sales.quotations.edit', $quotation->id) }}" class="btn btn-outline-primary rounded-3 fw-semibold d-flex align-items-center gap-1.5">
                             <span>✏️</span> Edit Proposal
                         </a>
+                    @endif
+
+                    <!-- Actions for DRAFT status -->
+                    @if($quotation->status === 'draft')
                         <form method="POST" action="{{ route('sales.quotations.approve', $quotation->id) }}">
                             @csrf
                             <button type="submit" class="btn btn-success rounded-3 fw-bold text-white px-3 d-flex align-items-center gap-1.5 shadow-sm">
@@ -111,6 +115,13 @@
                             <span>📋</span> Duplicate
                         </button>
                     </form>
+
+                    <!-- Delete Action (Allowed for non-converted quotations) -->
+                    @if($quotation->status !== 'converted' && !$quotation->sales_order_id)
+                        <button type="button" class="btn btn-outline-danger rounded-3 fw-semibold d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#deleteQuotationModal">
+                            <span>🗑️</span> Delete
+                        </button>
+                    @endif
 
                     <a href="{{ route('sales.quotations.index') }}" class="btn btn-light border rounded-3 fw-semibold">
                         Back to Queue
@@ -741,4 +752,33 @@ function launchCce(channel) {
 }
 </script>
 @endpush
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteQuotationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom bg-danger-subtle text-danger rounded-top-4 py-3">
+                <h5 class="modal-title fw-bold">🗑️ Confirm Quotation Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="display-6 text-danger mb-3">⚠️</div>
+                <h6 class="fw-bold text-body">Are you sure you want to delete this quotation?</h6>
+                <p class="text-muted small mb-0">
+                    Quotation proposal <strong class="text-dark">{{ $quotation->quotation_number }}</strong> will be permanently removed.
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer border-top bg-light rounded-bottom-4 py-2.5">
+                <button type="button" class="btn btn-secondary rounded-3 px-3 fw-bold" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ route('sales.quotations.destroy', $quotation->id) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger rounded-3 px-4 fw-bold">Delete Quotation &rarr;</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection

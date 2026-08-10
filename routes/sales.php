@@ -54,7 +54,11 @@ Route::middleware(['auth', 'verified'])->prefix('sales')->name('sales.')->group(
     // Quotations Engine
     Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
     Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+    Route::get('quotations/search-products', [QuotationController::class, 'searchProducts'])->name('quotations.search-products');
     Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+    Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
+    Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
+    Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
     Route::get('quotations/{quotation}/live-status', [QuotationController::class, 'liveStatus'])->name('quotations.live-status');
     Route::post('quotations/{quotation}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
     Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');

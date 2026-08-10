@@ -95,7 +95,7 @@
                                 </div>
 
                                 <button type="button" class="btn btn-outline-warning btn-sm rounded-3 fw-bold text-dark w-100 d-flex align-items-center justify-content-center gap-1"
-                                        onclick="addToCart({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ $p->sku }}', {{ $p->selling_price }}, {{ $p->tax->rate ?? 18.0 }})">
+                                        onclick="addToCart({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ $p->sku }}', {{ $p->selling_price }}, {{ $p->tax->rate ?? 18.0 }}, {{ $availableStock }})">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-cart-plus" viewBox="0 0 16 16">
                                         <path d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9V5.5z"/>
                                         <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H3.89l-.371-1.485A.5.5 0 0 0 3 1H.5z"/>
@@ -206,9 +206,34 @@
     </div>
 </div>
 
+<!-- Stock Violation Warning Modal -->
+<div class="modal fade" id="stockWarningModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom bg-danger-subtle text-danger rounded-top-4">
+                <h5 class="modal-title fw-bold" id="stockModalTitle">⚠️ Stock Availability Violation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="stockModalBody">
+                <!-- Injected via JS -->
+            </div>
+            <div class="modal-footer border-top bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-secondary rounded-3 fw-bold px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let cart = [];
+
+function showStockModal(title, bodyHtml) {
+    document.getElementById('stockModalTitle').textContent = title;
+    document.getElementById('stockModalBody').innerHTML = bodyHtml;
+    let modal = new bootstrap.Modal(document.getElementById('stockWarningModal'));
+    modal.show();
+}
 
 function onCustomerSelectChange() {
     let select = document.getElementById('customerSelect');
@@ -232,10 +257,39 @@ function onCustomerSelectChange() {
     renderCart();
 }
 
-function addToCart(id, name, sku, basePrice, gstRate) {
+function addToCart(id, name, sku, basePrice, gstRate, availableStock) {
+    if (availableStock <= 0) {
+        showStockModal("⚠️ Product Out of Stock", `
+            <div class="p-3 bg-danger-subtle text-danger rounded-3 mb-3 border border-danger-subtle">
+                <h6 class="fw-bold mb-1">Product Cannot Be Added</h6>
+                <div><strong>${name}</strong> (SKU: <code>${sku}</code>) is currently out of stock in inventory master.</div>
+            </div>
+            <div class="small text-muted"><strong>Available Quantity:</strong> 0 units. Please receive or adjust stock in Inventory before offering to customer.</div>
+        `);
+        return;
+    }
+
     let existing = cart.find(item => item.product_id === id);
+    let targetQty = existing ? existing.quantity + 1 : 1;
+
+    if (targetQty > availableStock) {
+        let shortage = targetQty - availableStock;
+        showStockModal("⚠️ Insufficient Stock", `
+            <div class="p-3 bg-warning-subtle text-dark rounded-3 mb-3 border border-warning-subtle">
+                <h6 class="fw-bold mb-1">Insufficient Available Inventory</h6>
+                <div>Cannot add requested quantity for <strong>${name}</strong> (SKU: <code>${sku}</code>).</div>
+            </div>
+            <ul class="list-group list-group-flush small mb-0 rounded-3 border">
+                <li class="list-group-item d-flex justify-content-between"><span>Requested Quantity:</span><strong>${targetQty}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Currently Available Stock:</span><strong class="text-success">${availableStock}</strong></li>
+                <li class="list-group-item d-flex justify-content-between bg-light"><span>Shortage:</span><strong class="text-danger">${shortage}</strong></li>
+            </ul>
+        `);
+        return;
+    }
+
     if (existing) {
-        existing.quantity += 1;
+        existing.quantity = targetQty;
     } else {
         cart.push({
             product_id: id,
@@ -245,7 +299,8 @@ function addToCart(id, name, sku, basePrice, gstRate) {
             quantity: 1,
             discount_amount: 0,
             discount_type: 'percentage',
-            gst_rate: gstRate
+            gst_rate: gstRate,
+            available_stock: availableStock
         });
     }
     renderCart();
@@ -256,11 +311,39 @@ function removeFromCart(id) {
     renderCart();
 }
 
-function updateQty(id, qty) {
+function updateQty(id, qtyVal) {
+    let qty = parseInt(qtyVal);
     let item = cart.find(i => i.product_id === id);
-    if (item) {
-        item.quantity = Math.max(1, parseInt(qty) || 1);
+    if (!item) return;
+
+    if (isNaN(qty) || qty <= 0) {
+        showStockModal("⚠️ Invalid Quantity", `
+            <div class="p-3 bg-danger-subtle text-danger rounded-3">
+                Quantity must be a positive integer greater than zero.
+            </div>
+        `);
+        renderCart();
+        return;
     }
+
+    if (qty > item.available_stock) {
+        let shortage = qty - item.available_stock;
+        showStockModal("⚠️ Insufficient Stock", `
+            <div class="p-3 bg-warning-subtle text-dark rounded-3 mb-3 border border-warning-subtle">
+                <h6 class="fw-bold mb-1">Quantity Exceeds Available Inventory</h6>
+                <div>Requested quantity for <strong>${item.name}</strong> exceeds live inventory level.</div>
+            </div>
+            <ul class="list-group list-group-flush small mb-0 rounded-3 border">
+                <li class="list-group-item d-flex justify-content-between"><span>Requested Quantity:</span><strong>${qty}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Available Stock:</span><strong class="text-success">${item.available_stock}</strong></li>
+                <li class="list-group-item d-flex justify-content-between bg-light"><span>Shortage:</span><strong class="text-danger">${shortage}</strong></li>
+            </ul>
+        `);
+        renderCart();
+        return;
+    }
+
+    item.quantity = qty;
     renderCart();
 }
 
