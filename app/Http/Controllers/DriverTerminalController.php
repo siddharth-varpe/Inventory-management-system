@@ -172,7 +172,10 @@ class DriverTerminalController extends Controller
         }
 
         // 4. Match or Link User Record for Laravel Session Authentication
-        $user = \App\Models\User::where('email', $driver->email)->first();
+        $user = \App\Models\User::where('driver_id', $driver->id)->first();
+        if (!$user && !empty($driver->email)) {
+            $user = \App\Models\User::where('email', strtolower($driver->email))->first();
+        }
         if (!$user && !empty($driver->phone_number)) {
             $user = \App\Models\User::where('phone', $driver->phone_number)->first();
         }
@@ -182,8 +185,12 @@ class DriverTerminalController extends Controller
                 'name' => $driver->driver_name,
                 'email' => $driver->email ?: (strtolower($driver->driver_code) . '@stockmanager.com'),
                 'password' => \Illuminate\Support\Facades\Hash::make($password),
+                'driver_id' => $driver->id,
                 'status' => 'active',
             ]);
+        } elseif ((int) $user->driver_id !== (int) $driver->id) {
+            $user->driver_id = $driver->id;
+            $user->save();
         }
 
         // 5. Password Verification
