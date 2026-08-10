@@ -1,31 +1,43 @@
 @extends('driver-terminal.layouts.app')
 
-@section('title', 'Terminal Workspace')
+@section('title', 'Driver Terminal')
 
 @section('content')
 <div class="row g-3">
     <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-3 p-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h5 class="fw-bold mb-0 text-white">Driver Terminal Foundation</h5>
-                    <span class="text-secondary small font-monospace">Phase 0 Integration Active</span>
-                </div>
-                <span class="badge bg-primary px-2.5 py-1">PHASE 0</span>
+        <div class="card bg-slate-800 border-slate-700 rounded-4 p-4 text-center">
+            <div class="mb-2">
+                <span class="fs-1">🚛</span>
             </div>
-        </div>
-    </div>
+            <h4 class="fw-bold text-white mb-1">DRIVER TERMINAL</h4>
+            <p class="text-secondary small mb-3">Phase 1 — Secure Driver Authentication</p>
 
-    <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-3 p-3">
-            <h6 class="fw-bold text-info mb-2">📋 Architecture Status</h6>
-            <ul class="list-unstyled small text-secondary mb-0">
-                <li class="mb-1">✅ Driver Master & ID Verified</li>
-                <li class="mb-1">✅ Vehicle Assignment Model Verified</li>
-                <li class="mb-1">✅ Transport Portal Manual Dispatch Removed</li>
-                <li class="mb-1">✅ Driver-Scoped Authorization Middleware Active</li>
-                <li>⏳ Active Delivery & Acceptance (Scheduled for Phase 1+)</li>
-            </ul>
+            <div class="bg-dark p-3 rounded-3 border border-secondary text-start mb-4">
+                <div class="row g-2">
+                    <div class="col-4 text-secondary small">Driver Name:</div>
+                    <div class="col-8 text-white fw-bold small">{{ $currentDriver->driver_name ?? auth()->user()->name }}</div>
+
+                    <div class="col-4 text-secondary small">Driver ID:</div>
+                    <div class="col-8 text-info font-monospace fw-bold small">{{ $currentDriver->driver_code ?? 'DRV-000001' }}</div>
+
+                    <div class="col-4 text-secondary small">Status:</div>
+                    <div class="col-8 small">
+                        <span class="badge bg-success">ACTIVE</span>
+                    </div>
+
+                    @if(!empty($currentDriver->phone_number))
+                    <div class="col-4 text-secondary small">Phone:</div>
+                    <div class="col-8 text-light small">{{ $currentDriver->phone_number }}</div>
+                    @endif
+                </div>
+            </div>
+
+            <form action="{{ route('driver-terminal.logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger btn-lg w-100 fw-bold rounded-3">
+                    Sign Out / Logout
+                </button>
+            </form>
         </div>
     </div>
 </div>

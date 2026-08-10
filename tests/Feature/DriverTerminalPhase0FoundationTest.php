@@ -125,8 +125,9 @@ class DriverTerminalPhase0FoundationTest extends TestCase
         $deliveriesRes = $this->get(route('driver-terminal.deliveries'));
         $deliveriesRes->assertOk();
 
-        // 4. Delivery detail stub
-        $detailRes = $this->get(route('driver-terminal.delivery.show', ['id' => 1]));
+        // 4. Delivery detail stub (IDOR validated for assigned request)
+        $this->transportRequest->update(['driver_id' => $this->driver->id]);
+        $detailRes = $this->get(route('driver-terminal.delivery.show', ['id' => $this->transportRequest->id]));
         $detailRes->assertOk();
 
         // 5. Profile stub

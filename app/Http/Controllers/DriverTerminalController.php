@@ -24,13 +24,21 @@ class DriverTerminalController extends Controller
      */
     public function index(Request $request): View
     {
-        // Identify Driver Context (Find assigned driver by name/employee ID or default to Rajesh Kumar)
-        $driverId = $request->input('driver_id');
-        if ($driverId) {
-            $currentDriver = Driver::find($driverId);
-        } else {
-            $currentDriver = Driver::whereIn('status', ['on_trip', 'on_delivery', 'available'])->first()
-                             ?: Driver::first();
+        // Identify Driver Context from Authenticated Session / Request attributes
+        $currentDriver = $request->attributes->get('current_driver');
+
+        if (!$currentDriver && auth()->check()) {
+            $user = auth()->user();
+            $currentDriver = Driver::where('email', $user->email)
+                ->orWhere('phone_number', $user->phone ?? null)
+                ->orWhere('id', $user->driver_id ?? null)
+                ->first();
+        }
+
+        if ($request->is('driver-terminal*') || $request->routeIs('driver-terminal.*')) {
+            return view('driver-terminal.home.index', [
+                'currentDriver' => $currentDriver,
+            ]);
         }
 
         $allDrivers = Driver::orderBy('driver_name')->get();
@@ -155,11 +163,104 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Phase 0 Foundational Stub: Login Page (NO OTP)
+     * Phase 1 — Driver Login Page (NO OTP)
      */
     public function login(): View
     {
         return view('driver-terminal.auth.login');
+    }
+
+    /**
+     * Phase 1 — Driver Authentication Action
+     */
+    public function authenticate(Request $request): RedirectResponse|JsonResponse
+    {
+        $credentials = $request->validate([
+            'driver_identifier' => 'required|string|max:100',
+            'password' => 'required|string',
+        ]);
+
+        $identifier = trim($credentials['driver_identifier']);
+        $password = $credentials['password'];
+
+        // 1. Locate Driver Record in Driver Master by driver_code, email, or phone_number
+        $driver = Driver::where('driver_code', $identifier)
+            ->orWhere('email', strtolower($identifier))
+            ->orWhere('phone_number', $identifier)
+            ->first();
+
+        // 2. Generic Error if driver does not exist (Prevents Driver ID enumeration)
+        if (!$driver) {
+            return $this->loginFailedResponse($request, 'Invalid login credentials.');
+        }
+
+        // 3. Driver Status Verification (Reject suspended/inactive/deactivated drivers)
+        if (in_array(strtolower($driver->status), ['suspended', 'inactive', 'deactivated']) || !empty($driver->deactivated_at)) {
+            return $this->loginFailedResponse($request, 'Account access suspended or inactive. Please contact Transport Management.');
+        }
+
+        // 4. Match or Link User Record for Laravel Session Authentication
+        $user = \App\Models\User::where('email', $driver->email)->first();
+        if (!$user && !empty($driver->phone_number)) {
+            $user = \App\Models\User::where('phone', $driver->phone_number)->first();
+        }
+
+        if (!$user) {
+            $user = \App\Models\User::create([
+                'name' => $driver->driver_name,
+                'email' => $driver->email ?: (strtolower($driver->driver_code) . '@stockmanager.com'),
+                'password' => \Illuminate\Support\Facades\Hash::make($password),
+                'status' => 'active',
+            ]);
+        }
+
+        // 5. Password Verification
+        if (!\Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            return $this->loginFailedResponse($request, 'Invalid login credentials.');
+        }
+
+        // 6. Log in user securely & regenerate session
+        \Illuminate\Support\Facades\Auth::login($user, (bool) $request->input('remember', false));
+        $request->session()->regenerate();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Driver authenticated successfully.',
+                'driver_code' => $driver->driver_code,
+                'driver_name' => $driver->driver_name,
+                'redirect_url' => route('driver-terminal.index'),
+            ]);
+        }
+
+        return redirect()->intended(route('driver-terminal.index'));
+    }
+
+    /**
+     * Phase 1 — Secure Driver Logout
+     */
+    public function logout(Request $request): RedirectResponse|JsonResponse
+    {
+        \Illuminate\Support\Facades\Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Logged out successfully.']);
+        }
+
+        return redirect()->route('driver-terminal.login')->with('success', 'You have been logged out.');
+    }
+
+    private function loginFailedResponse(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['success' => false, 'message' => $message], 422);
+        }
+
+        return redirect()->back()
+            ->withErrors(['driver_identifier' => $message])
+            ->withInput($request->only('driver_identifier'));
     }
 
     /**
