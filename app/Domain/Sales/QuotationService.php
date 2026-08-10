@@ -259,10 +259,11 @@ class QuotationService
     /**
      * Validate Quotation for Conversion Eligibility (including live Stock Availability).
      */
-    public function validateConversionEligibility(Quotation $quotation): void
+    public function validateConversionEligibility(Quotation $quotation, bool $lockForUpdate = false): void
     {
         if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
-            throw new InvalidArgumentException("Quotation #{$quotation->quotation_number} has already been converted to a Sales Order.");
+            $linkedOrder = $quotation->salesOrder ? " (#{$quotation->salesOrder->order_number})" : '';
+            throw new InvalidArgumentException("Quotation #{$quotation->quotation_number} has already been converted to a Sales Order{$linkedOrder}.");
         }
 
         if (!in_array($quotation->status, ['approved', 'customer_accepted'])) {
@@ -273,15 +274,28 @@ class QuotationService
             throw new InvalidArgumentException("Quotation #{$quotation->quotation_number} expired on " . $quotation->validity_date->format('d M Y') . " and cannot be converted.");
         }
 
-        if ($quotation->customer->status !== 'active') {
+        if ($quotation->customer && $quotation->customer->status !== 'active') {
             throw new InvalidArgumentException("Customer account '{$quotation->customer->company_name}' is inactive or blocked.");
         }
 
         $shortages = [];
         foreach ($quotation->items as $item) {
-            $product = $item->product;
+            if ($item->quantity <= 0) {
+                throw new InvalidArgumentException("Quotation item quantity must be greater than zero.");
+            }
+
+            $productQuery = \App\Models\Product::where('id', $item->product_id);
+            if ($lockForUpdate) {
+                $productQuery->lockForUpdate();
+            }
+            $product = $productQuery->first();
+
+            if (!$product) {
+                throw new InvalidArgumentException("Line item product reference (ID: {$item->product_id}) is missing or no longer exists in inventory master.");
+            }
+
             if ($product->status !== 'active') {
-                throw new InvalidArgumentException("Line item product '{$product->name}' is inactive in inventory master.");
+                throw new InvalidArgumentException("Line item product '{$product->name}' (SKU: {$product->sku}) is inactive in inventory master.");
             }
 
             $physical = (int)$product->physical_stock;
@@ -289,12 +303,13 @@ class QuotationService
             $available = max(0, $physical - $reserved);
 
             if ($available < $item->quantity) {
-                $shortages[] = "'{$product->name}' (SKU: {$product->sku}): Available={$available}, Required={$item->quantity}";
+                $shortageAmount = $item->quantity - $available;
+                $shortages[] = "'{$product->name}' (SKU: {$product->sku}): Available={$available}, Required={$item->quantity}, Shortage={$shortageAmount}";
             }
         }
 
         if (!empty($shortages)) {
-            throw new InvalidArgumentException("Insufficient Stock to convert Quotation #{$quotation->quotation_number}. Shortages: " . implode('; ', $shortages));
+            throw new InvalidArgumentException("Unable to Convert Quotation #{$quotation->quotation_number}. Insufficient available stock for item(s): " . implode('; ', $shortages));
         }
     }
 

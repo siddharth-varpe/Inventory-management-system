@@ -25,10 +25,10 @@ class SalesOrderService
      */
     public function createFromQuotation(Quotation $quotation, int $userId, ?int $warehouseId = null): SalesOrder
     {
-        // Guard Check: Validates Status, Customer, Validity Date, Product Active states, and Stock Shortages
-        $this->quotationService->validateConversionEligibility($quotation);
-
         return DB::transaction(function () use ($quotation, $userId, $warehouseId) {
+            // Guard Check: Atomic validation with row-level locks on inventory products
+            $this->quotationService->validateConversionEligibility($quotation, true);
+
             $customer = $quotation->customer;
             $warehouse = $warehouseId ? Warehouse::find($warehouseId) : Warehouse::first();
 

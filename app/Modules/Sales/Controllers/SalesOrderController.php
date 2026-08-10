@@ -47,16 +47,77 @@ class SalesOrderController extends Controller
     /**
      * Convert Quotation into Sales Order
      */
-    public function createFromQuotation(Quotation $quotation): RedirectResponse
+    public function createFromQuotation(Request $request, Quotation $quotation)
     {
-        if ($quotation->status !== 'approved') {
-            return redirect()->back()->with('error', 'Only approved quotations can be converted into Sales Orders.');
+        if ($quotation->status === 'converted' || $quotation->sales_order_id !== null) {
+            $linkedOrder = $quotation->salesOrder ? " (#{$quotation->salesOrder->order_number})" : '';
+            $errorMsg = "Quotation #{$quotation->quotation_number} has already been converted to a Sales Order{$linkedOrder}.";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'type' => 'business_validation',
+                    'message' => $errorMsg
+                ], 422);
+            }
+            return redirect()->back()->with('error', $errorMsg);
         }
 
-        $order = $this->salesOrderService->createFromQuotation($quotation, auth()->id() ?? 1);
+        if (!in_array($quotation->status, ['approved', 'customer_accepted'])) {
+            $errorMsg = "Only approved or customer accepted quotations can be converted into Sales Orders. Current status: " . strtoupper($quotation->status);
 
-        return redirect()->route('sales.orders.show', $order->id)
-            ->with('success', "Quotation {$quotation->quotation_number} converted into Sales Order {$order->order_number}! Status: " . strtoupper($order->status));
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'type' => 'business_validation',
+                    'message' => $errorMsg
+                ], 422);
+            }
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
+        try {
+            $order = $this->salesOrderService->createFromQuotation($quotation, auth()->id() ?? 1);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Quotation {$quotation->quotation_number} converted into Sales Order {$order->order_number}!",
+                    'order' => $order,
+                ]);
+            }
+
+            return redirect()->route('sales.orders.show', $order->id)
+                ->with('success', "Quotation {$quotation->quotation_number} converted into Sales Order {$order->order_number}! Status: " . strtoupper($order->status));
+
+        } catch (\InvalidArgumentException $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'type' => 'business_validation',
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("SalesOrderController createFromQuotation exception for Quotation #{$quotation->quotation_number}: " . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            $errorMessage = "Unable to create the Sales Order right now. Please check item stock availability and try again.";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'type' => 'system_error',
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $errorMessage);
+        }
     }
 
     /**
