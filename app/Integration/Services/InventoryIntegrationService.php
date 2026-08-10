@@ -33,8 +33,8 @@ class InventoryIntegrationService implements InventoryIntegrationInterface
             $productModel = $product instanceof Product ? $product : Product::findOrFail($product);
 
             if ($action === 'create_writeoff' || $action === 'auto_writeoff') {
-                $newQty = max(0, $productModel->physical_stock - $quantity);
-                $productModel->update(['physical_stock' => $newQty]);
+                $productModel->physical_stock = max(0, (int)$productModel->physical_stock - (int)$quantity);
+                $productModel->save();
 
                 StockAdjustment::create([
                     'reference_no' => 'ADJ-EXC-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2))),

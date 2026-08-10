@@ -69,10 +69,9 @@ class PickPackService
             foreach ($task->items as $item) {
                 if ($item->product) {
                     $product = $item->product;
-                    $product->decrement('physical_stock', $item->requested_quantity);
-                    if ($product->reserved_stock >= $item->requested_quantity) {
-                        $product->decrement('reserved_stock', $item->requested_quantity);
-                    }
+                    $product->physical_stock = max(0, (int)$product->physical_stock - (int)$item->requested_quantity);
+                    $product->reserved_stock = max(0, (int)$product->reserved_stock - (int)$item->requested_quantity);
+                    $product->save();
                 }
             }
 

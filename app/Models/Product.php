@@ -166,6 +166,17 @@ class Product extends Model
     }
 
     /**
+     * Authoritative Accessor: Always dynamically compute Available Stock.
+     * Formula: max(0, physical_stock - reserved_stock)
+     */
+    public function getAvailableStockAttribute(): int
+    {
+        $physical = (int) ($this->attributes['physical_stock'] ?? 0);
+        $reserved = (int) ($this->attributes['reserved_stock'] ?? 0);
+        return max(0, $physical - $reserved);
+    }
+
+    /**
      * Boot model events for automatic stock availability synchronization.
      */
     protected static function booted(): void

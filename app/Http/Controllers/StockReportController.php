@@ -50,7 +50,7 @@ class StockReportController extends Controller
         $metrics = [
             'total_inventory_value' => Product::all()->sum(fn ($p) => $p->physical_stock * $p->cost_price),
             'total_selling_value' => Product::all()->sum(fn ($p) => $p->physical_stock * $p->selling_price),
-            'low_stock_count' => Product::whereColumn('physical_stock', '<=', 'reorder_level')->count(),
+            'low_stock_count' => Product::lowStock()->count(),
             'dead_stock_count' => $this->reportService->getDeadStock()->count(),
         ];
 
