@@ -35,6 +35,25 @@ The system handles core operational workflows across multiple departments:
 
 ---
 
+## Module Status
+
+### Completed / Working
+
+- Sales & CRM — Completed
+- Inventory / Manage Stock — Completed
+- Warehouse / Organize Stock — Completed
+- Pick & Pack / Fulfillment — Completed
+- Transport Department — Completed
+- Procurement / Order Supplies — Completed
+- Billing / Bill Customers — Completed
+- Admin Center — Completed
+
+### In Progress
+
+- Driver Portal / Driver Terminal — In Progress
+
+---
+
 ## Setup Instructions
 
 ### Prerequisites
