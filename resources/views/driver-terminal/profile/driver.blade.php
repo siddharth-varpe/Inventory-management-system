@@ -11,9 +11,9 @@
             <h5 class="fw-black text-dark mb-0 fs-5">Driver Profile</h5>
             <p class="text-muted small mb-0" style="font-size: 0.78rem;">Authenticated Driver Master Credentials & Account Details</p>
         </div>
-        <a href="{{ route('driver-terminal.profile', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
-           class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold d-flex align-items-center gap-1 shadow-xs" style="font-size: 0.78rem;">
-            <span>🚗 Vehicle Page</span>
+        <a href="{{ route('driver-terminal.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
+           class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-bold d-flex align-items-center gap-1 shadow-xs" style="font-size: 0.78rem;">
+            <span>Dashboard</span>
             <span>&rsaquo;</span>
         </a>
     </div>

@@ -37,8 +37,7 @@ Route::prefix('driver-terminal')->name('driver-terminal.')->group(function () {
 
         // Driver-Scoped Canonical Routes (/driver-terminal/{driver_code})
         Route::get('/{driver_code}', [DriverTerminalController::class, 'index'])->name('index');
-        Route::get('/{driver_code}/vehicle', [DriverTerminalController::class, 'vehicleStatus'])->name('vehicle.status');
-        Route::get('/{driver_code}/profile', [DriverTerminalController::class, 'profile'])->name('profile');
+        Route::get('/{driver_code}/profile', [DriverTerminalController::class, 'driverProfile'])->name('profile');
         Route::get('/{driver_code}/driver-profile', [DriverTerminalController::class, 'driverProfile'])->name('driver-profile');
         Route::get('/{driver_code}/notifications', [DriverTerminalController::class, 'notifications'])->name('notifications');
         Route::get('/{driver_code}/deliveries', [DriverTerminalController::class, 'deliveries'])->name('deliveries.index');
