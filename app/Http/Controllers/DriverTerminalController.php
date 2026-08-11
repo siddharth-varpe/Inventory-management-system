@@ -233,17 +233,41 @@ class DriverTerminalController extends Controller
         /** @var Driver $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
         $driverId = $currentDriver->id;
+
         $search = trim((string) $request->query('search', ''));
+        $activeTab = strtolower(trim((string) $request->query('tab', $request->query('status', 'all'))));
 
+        if (!in_array($activeTab, ['all', 'ongoing', 'completed', 'upcoming'])) {
+            $activeTab = 'all';
+        }
+
+        // Summary Metric Counts
+        $totalCount = TransportRequest::where('driver_id', $driverId)->count();
+        $ongoingCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count();
+        $completedCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count();
+        $upcomingCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count();
+
+        // Main Query
         $query = TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver'])
-            ->where('driver_id', $driverId)
-            ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched']);
+            ->where('driver_id', $driverId);
 
+        // Filter by Status Tab
+        if ($activeTab === 'ongoing') {
+            $query->whereIn('status', ['dispatched', 'in_transit', 'arrived']);
+        } elseif ($activeTab === 'completed') {
+            $query->whereIn('status', ['delivered', 'completed']);
+        } elseif ($activeTab === 'upcoming') {
+            $query->whereIn('status', ['driver_vehicle_assigned', 'assigned']);
+        }
+
+        // Filter by Search Term
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('request_number', 'like', "%{$search}%")
+                    ->orWhere('order_reference', 'like', "%{$search}%")
                     ->orWhere('customer_name', 'like', "%{$search}%")
                     ->orWhere('delivery_address', 'like', "%{$search}%")
+                    ->orWhere('delivery_city', 'like', "%{$search}%")
                     ->orWhereHas('salesOrder', function ($sq) use ($search) {
                         $sq->where('order_number', 'like', "%{$search}%")
                             ->orWhereHas('customer', function ($cq) use ($search) {
@@ -253,15 +277,17 @@ class DriverTerminalController extends Controller
             });
         }
 
-        $deliveries = $query->get()->sortBy(function ($item) {
-            $statusWeight = in_array(strtolower($item->status), ['driver_vehicle_assigned', 'assigned']) ? 1 : 2;
-            return $statusWeight . '_' . (9999999999 - strtotime((string) ($item->updated_at ?? $item->created_at)));
-        });
+        $deliveries = $query->latest()->get();
 
         return view('driver-terminal.deliveries.index', [
             'currentDriver' => $currentDriver,
             'deliveries' => $deliveries,
             'search' => $search,
+            'activeTab' => $activeTab,
+            'totalCount' => $totalCount,
+            'ongoingCount' => $ongoingCount,
+            'completedCount' => $completedCount,
+            'upcomingCount' => $upcomingCount,
         ]);
     }
 
