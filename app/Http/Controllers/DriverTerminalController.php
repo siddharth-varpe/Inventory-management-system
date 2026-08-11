@@ -447,6 +447,46 @@ class DriverTerminalController extends Controller
     }
 
     /**
+     * Dedicated Vehicle & Status Page (/driver-terminal/{driver_code}/vehicle)
+     */
+    public function vehicleStatus(Request $request, ?string $driver_code = null): View
+    {
+        /** @var Driver $currentDriver */
+        $currentDriver = $request->attributes->get('current_driver');
+        $driverId = $currentDriver->id;
+
+        // Resolve Driver's Authorized Vehicle
+        $activeDelivery = TransportRequest::with('vehicle')
+            ->where('driver_id', $driverId)
+            ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
+            ->latest()
+            ->first();
+
+        $activeAssignment = DriverVehicleAssignment::with('vehicle')
+            ->where('driver_id', $driverId)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        $assignedVehicle = $activeDelivery?->vehicle 
+            ?? $activeAssignment?->vehicle 
+            ?? Vehicle::find($currentDriver->current_assignment)
+            ?? Vehicle::first();
+
+        $serviceRemainingDays = null;
+        if ($assignedVehicle && $assignedVehicle->next_service_due_date) {
+            $serviceRemainingDays = (int) now()->diffInDays($assignedVehicle->next_service_due_date, false);
+        }
+
+        return view('driver-terminal.vehicle.index', [
+            'currentDriver' => $currentDriver,
+            'assignedVehicle' => $assignedVehicle,
+            'activeDelivery' => $activeDelivery,
+            'serviceRemainingDays' => $serviceRemainingDays,
+        ]);
+    }
+
+    /**
      * Legacy profile redirect to Driver Master Profile Page
      */
     public function profile(Request $request, ?string $driver_code = null): RedirectResponse
