@@ -39,20 +39,26 @@ class EnsureUserIsDriver
             $driver = Driver::where('phone_number', $user->phone)->first();
         }
 
-        // 2. Reject unlinked accounts with 403 Forbidden (No admin bypass allowed)
+        // 2. Redirect unlinked accounts to login page instead of rendering 403 page
         if (!$driver) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthorized driver access. Your account is not linked to a Driver Master profile.'], 403);
             }
-            abort(403, 'Unauthorized Driver Access. Your account is not linked to a Driver Master profile.');
+            \Illuminate\Support\Facades\Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('driver-terminal.login')->withErrors(['driver_identifier' => 'Your account is not linked to a Driver Master profile.']);
         }
 
-        // 3. Driver status validation (Reject suspended/inactive drivers)
+        // 3. Driver status validation (Redirect suspended/inactive drivers to login page)
         if (in_array(strtolower($driver->status), ['suspended', 'inactive', 'deactivated']) || !empty($driver->deactivated_at)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Account access suspended or inactive. Please contact Transport Management.'], 403);
             }
-            abort(403, 'Account access suspended or inactive. Please contact Transport Management.');
+            \Illuminate\Support\Facades\Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('driver-terminal.login')->withErrors(['driver_identifier' => 'Invalid Driver ID or password.']);
         }
 
         // Attach active driver context to request
@@ -69,7 +75,7 @@ class EnsureUserIsDriver
                 if ($request->expectsJson()) {
                     return response()->json(['message' => 'Unauthorized access to requested delivery resource.'], 403);
                 }
-                abort(403, 'Unauthorized access: Requested delivery task is not assigned to your Driver ID.');
+                return redirect()->route('driver-terminal.index')->with('error', 'Unauthorized access to requested delivery resource.');
             }
         }
 

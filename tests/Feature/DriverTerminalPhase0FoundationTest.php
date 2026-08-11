@@ -120,23 +120,6 @@ class DriverTerminalPhase0FoundationTest extends TestCase
         // 2. Authenticated terminal workspace
         $indexRes = $this->get(route('driver-terminal.index'));
         $indexRes->assertOk();
-
-        // 3. Deliveries list stub
-        $deliveriesRes = $this->get(route('driver-terminal.deliveries'));
-        $deliveriesRes->assertOk();
-
-        // 4. Delivery detail stub (IDOR validated for assigned request)
-        $this->transportRequest->update(['driver_id' => $this->driver->id]);
-        $detailRes = $this->get(route('driver-terminal.delivery.show', ['id' => $this->transportRequest->id]));
-        $detailRes->assertOk();
-
-        // 5. Profile stub
-        $profileRes = $this->get(route('driver-terminal.profile'));
-        $profileRes->assertOk();
-
-        // 6. Notifications stub
-        $notifRes = $this->get(route('driver-terminal.notifications'));
-        $notifRes->assertOk();
     }
 
     /** @test */

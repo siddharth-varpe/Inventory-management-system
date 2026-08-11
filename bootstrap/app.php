@@ -55,6 +55,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+        $middleware->validateCsrfTokens(except: [
+            'driver-terminal/*',
+            'driver-terminal/deliveries/*/accept',
+            'driver/*',
+        ]);
         $middleware->alias([
             'auth' => \App\Http\Middleware\AutoAuthenticate::class,
             'verified' => \App\Http\Middleware\AutoAuthenticate::class,

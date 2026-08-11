@@ -16,10 +16,24 @@ class TransportMasterManager
     /**
      * Generate Permanent Immutable Driver ID (DRV-000001)
      */
+    /**
+     * Generate Permanent Immutable Driver ID (DRV-000001)
+     */
     public function generateDriverCode(): string
     {
+        $maxSeq = 0;
+        $codes = DB::table('drivers')->whereNotNull('driver_code')->pluck('driver_code');
+        foreach ($codes as $c) {
+            if (preg_match('/DRV-(\d+)/i', (string)$c, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxSeq) {
+                    $maxSeq = $num;
+                }
+            }
+        }
+
         $maxId = (int) (DB::table('drivers')->max('id') ?? 0);
-        $seq = $maxId + 1;
+        $seq = max($maxSeq, $maxId) + 1;
 
         do {
             $code = 'DRV-' . str_pad((string)$seq, 6, '0', STR_PAD_LEFT);
@@ -33,12 +47,53 @@ class TransportMasterManager
     }
 
     /**
+     * Generate Permanent Immutable Employee ID (EMP-DRV-0001)
+     */
+    public function generateEmployeeId(): string
+    {
+        $maxSeq = 0;
+        $empIds = DB::table('drivers')->whereNotNull('employee_id')->pluck('employee_id');
+        foreach ($empIds as $empId) {
+            if (preg_match('/EMP-DRV-(\d+)/i', (string)$empId, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxSeq) {
+                    $maxSeq = $num;
+                }
+            }
+        }
+
+        $maxId = (int) (DB::table('drivers')->max('id') ?? 0);
+        $seq = max($maxSeq, $maxId) + 1;
+
+        do {
+            $code = 'EMP-DRV-' . str_pad((string)$seq, 4, '0', STR_PAD_LEFT);
+            $exists = Driver::where('employee_id', $code)->exists();
+            if ($exists) {
+                $seq++;
+            }
+        } while ($exists);
+
+        return $code;
+    }
+
+    /**
      * Generate Permanent Immutable Vehicle ID (VEH-000001)
      */
     public function generateVehicleCode(): string
     {
+        $maxSeq = 0;
+        $codes = DB::table('vehicles')->whereNotNull('vehicle_code')->pluck('vehicle_code');
+        foreach ($codes as $c) {
+            if (preg_match('/VEH-(\d+)/i', (string)$c, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxSeq) {
+                    $maxSeq = $num;
+                }
+            }
+        }
+
         $maxId = (int) (DB::table('vehicles')->max('id') ?? 0);
-        $seq = $maxId + 1;
+        $seq = max($maxSeq, $maxId) + 1;
 
         do {
             $code = 'VEH-' . str_pad((string)$seq, 6, '0', STR_PAD_LEFT);
@@ -102,11 +157,14 @@ class TransportMasterManager
             }
 
             $driverCode = $this->generateDriverCode();
+            $employeeId = isset($data['employee_id']) && filled($data['employee_id']) 
+                ? trim($data['employee_id']) 
+                : $this->generateEmployeeId();
 
             $driver = Driver::create([
                 'driver_code' => $driverCode,
                 'driver_name' => trim($data['driver_name']),
-                'employee_id' => $data['employee_id'] ?? ('EMP-DRV-' . str_pad((string)(Driver::count() + 1), 4, '0', STR_PAD_LEFT)),
+                'employee_id' => $employeeId,
                 'phone_number' => $normalizedPhone,
                 'email' => isset($data['email']) && filled($data['email']) ? trim($data['email']) : null,
                 'date_of_birth' => $data['date_of_birth'] ?? null,

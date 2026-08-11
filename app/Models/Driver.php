@@ -51,6 +51,21 @@ class Driver extends Model
         'performance_rating' => 'decimal:2',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($driver) {
+            $manager = new \App\Domain\Transport\TransportMasterManager();
+            if (empty($driver->driver_code)) {
+                $driver->driver_code = $manager->generateDriverCode();
+            }
+            if (empty($driver->employee_id)) {
+                $driver->employee_id = $manager->generateEmployeeId();
+            }
+        });
+    }
+
     /**
      * User account associated with this Driver Master profile.
      */

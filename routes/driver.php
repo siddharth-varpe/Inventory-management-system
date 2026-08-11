@@ -28,19 +28,15 @@ Route::middleware(['driver.auth'])->get('/driver', [DriverTerminalController::cl
 |--------------------------------------------------------------------------
 */
 Route::prefix('driver-terminal')->name('driver-terminal.')->group(function () {
-    // Unauthenticated Guest Routes (Authentication - NO OTP)
+    // Unauthenticated Guest Routes (Driver Login System)
     Route::get('/login', [DriverTerminalController::class, 'login'])->name('login');
     Route::post('/login', [DriverTerminalController::class, 'authenticate'])
         ->middleware('throttle:5,1')
         ->name('login.post');
 
-    // Authenticated Driver Terminal Routes
+    // Authenticated Driver Verification Routes
     Route::middleware(['driver.auth'])->group(function () {
         Route::get('/', [DriverTerminalController::class, 'index'])->name('index');
         Route::post('/logout', [DriverTerminalController::class, 'logout'])->name('logout');
-        Route::get('/deliveries', [DriverTerminalController::class, 'deliveries'])->name('deliveries');
-        Route::get('/delivery/{id}', [DriverTerminalController::class, 'showDelivery'])->name('delivery.show');
-        Route::get('/profile', [DriverTerminalController::class, 'profile'])->name('profile');
-        Route::get('/notifications', [DriverTerminalController::class, 'notifications'])->name('notifications');
     });
 });

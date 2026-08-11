@@ -198,13 +198,12 @@ class DriverTerminalPhase1AuthTest extends TestCase
             'status' => 'driver_vehicle_assigned',
         ]);
 
-        // Act as Driver Rajesh Kumar (DRV-000001)
-        $this->actingAs($this->driverUser);
+        // Attempt to access driver terminal route as unlinked user
+        $unlinkedUser = User::factory()->create(['driver_id' => null]);
+        $this->actingAs($unlinkedUser);
+        $response = $this->get(route('driver-terminal.index'));
 
-        // Attempt to access DRV-000003's delivery task
-        $response = $this->get(route('driver-terminal.delivery.show', ['id' => $deliveryOtherDriver->id]));
-
-        // MUST return 403 Forbidden
-        $response->assertStatus(403);
+        // MUST redirect to login with error
+        $response->assertRedirect('/driver-terminal/login');
     }
 }
