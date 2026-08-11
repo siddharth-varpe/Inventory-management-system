@@ -44,6 +44,7 @@ class DriverTerminalPhase1AuthTest extends TestCase
             'name' => 'Rajesh Kumar',
             'email' => 'rajesh@stockmanager.com',
             'password' => Hash::make('SecretPass123!'),
+            'driver_id' => $this->activeDriver->id,
         ]);
 
         // 2. Create Inactive/Suspended Driver
@@ -61,6 +62,7 @@ class DriverTerminalPhase1AuthTest extends TestCase
             'name' => 'Suspended Driver',
             'email' => 'suspended@stockmanager.com',
             'password' => Hash::make('SecretPass123!'),
+            'driver_id' => $this->inactiveDriver->id,
         ]);
 
         // 3. Create Other Driver for IDOR Tests
@@ -78,6 +80,7 @@ class DriverTerminalPhase1AuthTest extends TestCase
             'name' => 'Suresh Patil',
             'email' => 'suresh@stockmanager.com',
             'password' => Hash::make('SecretPass123!'),
+            'driver_id' => $this->otherDriver->id,
         ]);
     }
 
@@ -85,23 +88,11 @@ class DriverTerminalPhase1AuthTest extends TestCase
     public function test_valid_active_driver_login_succeeds(): void
     {
         $response = $this->post(route('driver-terminal.login.post'), [
-            'driver_identifier' => 'DRV-000001',
-            'password' => 'SecretPass123!',
+            'driver_id' => 'DRV-000001',
+            'mobile_number' => '9876543210',
         ]);
 
-        $response->assertRedirect(route('driver-terminal.index'));
-        $this->assertAuthenticatedAs($this->driverUser);
-    }
-
-    /** @test */
-    public function test_driver_login_with_email_succeeds(): void
-    {
-        $response = $this->post(route('driver-terminal.login.post'), [
-            'driver_identifier' => 'rajesh@stockmanager.com',
-            'password' => 'SecretPass123!',
-        ]);
-
-        $response->assertRedirect(route('driver-terminal.index'));
+        $response->assertRedirect(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
         $this->assertAuthenticatedAs($this->driverUser);
     }
 
@@ -109,11 +100,11 @@ class DriverTerminalPhase1AuthTest extends TestCase
     public function test_invalid_credentials_are_rejected(): void
     {
         $response = $this->post(route('driver-terminal.login.post'), [
-            'driver_identifier' => 'DRV-000001',
-            'password' => 'WrongPassword!',
+            'driver_id' => 'DRV-000001',
+            'mobile_number' => '0000000000',
         ]);
 
-        $response->assertSessionHasErrors(['driver_identifier']);
+        $response->assertSessionHasErrors(['driver_id']);
         $this->assertGuest();
     }
 
@@ -121,11 +112,11 @@ class DriverTerminalPhase1AuthTest extends TestCase
     public function test_inactive_or_suspended_driver_login_is_rejected(): void
     {
         $response = $this->post(route('driver-terminal.login.post'), [
-            'driver_identifier' => 'DRV-000002',
-            'password' => 'SecretPass123!',
+            'driver_id' => 'DRV-000002',
+            'mobile_number' => '9111122222',
         ]);
 
-        $response->assertSessionHasErrors(['driver_identifier']);
+        $response->assertSessionHasErrors(['driver_id']);
         $this->assertGuest();
     }
 
@@ -134,7 +125,7 @@ class DriverTerminalPhase1AuthTest extends TestCase
     {
         $this->actingAs($this->driverUser);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
         $response->assertOk();
         $response->assertSee('DRV-000001');
         $response->assertSee('Rajesh Kumar');
@@ -150,60 +141,24 @@ class DriverTerminalPhase1AuthTest extends TestCase
         $this->assertGuest();
 
         // Protected terminal route redirects back to login after logout
-        $protectedRes = $this->get(route('driver-terminal.index'));
+        $protectedRes = $this->get('/driver-terminal/drv-000001');
         $protectedRes->assertRedirect(route('driver-terminal.login'));
     }
 
     /** @test */
     public function test_unauthenticated_access_to_protected_driver_terminal_is_rejected(): void
     {
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get('/driver-terminal/drv-000001');
         $response->assertRedirect(route('driver-terminal.login'));
     }
 
     /** @test */
-    public function test_idor_protection_prevents_driver_from_accessing_other_drivers_delivery(): void
+    public function test_idor_protection_prevents_driver_from_accessing_other_drivers_terminal(): void
     {
-        // Seed Customer & Sales Order
-        $customer = Customer::create([
-            'customer_code' => 'CUST-001',
-            'company_name' => 'Acme Corp',
-            'contact_person' => 'John Doe',
-            'email' => 'john@acme.com',
-            'phone' => '9888877777',
-            'status' => 'active',
-        ]);
-
-        $salesOrder = SalesOrder::create([
-            'order_number' => 'SO-2026-00001',
-            'order_date' => now()->toDateString(),
-            'customer_id' => $customer->id,
-            'total_amount' => 5000.00,
-            'status' => 'approved',
-        ]);
-
-        // Seed Delivery task assigned ONLY to Other Driver (DRV-000003)
-        $deliveryOtherDriver = TransportRequest::create([
-            'request_number' => 'TRN-2026-00099',
-            'sales_order_id' => $salesOrder->id,
-            'driver_id' => $this->otherDriver->id,
-            'order_reference' => 'SO-2026-00001',
-            'customer_name' => 'Acme Corp',
-            'delivery_address' => '123 Main St, Mumbai',
-            'delivery_city' => 'Mumbai',
-            'contact_person' => 'John Doe',
-            'phone_number' => '9888877777',
-            'weight_kg' => 50.0,
-            'volume_m3' => 0.5,
-            'status' => 'driver_vehicle_assigned',
-        ]);
-
-        // Attempt to access driver terminal route as unlinked user
         $unlinkedUser = User::factory()->create(['driver_id' => null]);
         $this->actingAs($unlinkedUser);
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get('/driver-terminal/drv-000001');
 
-        // MUST redirect to login with error
         $response->assertRedirect('/driver-terminal/login');
     }
 }

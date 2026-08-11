@@ -1,6 +1,6 @@
 @extends('driver-terminal.layouts.app')
 
-@section('title', 'Driver Authenticated')
+@section('title', 'Driver Workspace — Driver Terminal')
 
 @section('content')
 <div class="row justify-content-center mt-4">
@@ -11,6 +11,18 @@
             </div>
             <h4 class="fw-extrabold text-white mb-1">DRIVER TERMINAL</h4>
             <p class="text-secondary small mb-4">Welcome, {{ $currentDriver->driver_name ?? 'Driver' }}</p>
+
+            @if(session('error'))
+                <div class="alert alert-danger bg-danger-subtle text-danger border-danger-subtle mb-4 p-3 rounded-3 small fw-bold text-start">
+                    ⚠️ {{ session('error') }}
+                </div>
+            @endif
+
+            @if(session('success'))
+                <div class="alert alert-success bg-success-subtle text-success border-success-subtle mb-4 p-3 rounded-3 small fw-bold text-start">
+                    ✓ {{ session('success') }}
+                </div>
+            @endif
 
             <div class="bg-dark p-3.5 rounded-3 border border-secondary text-start mb-4">
                 <div class="mb-3">
@@ -35,13 +47,16 @@
                 </div>
             </div>
 
-            <div class="alert alert-success border-success-subtle text-center small mb-4">
-                ✓ Driver login successful.
-            </div>
+            <a href="{{ route('driver-terminal.deliveries.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" class="btn btn-primary btn-lg w-100 fw-bold rounded-3 shadow mb-3 d-flex align-items-center justify-content-center gap-2">
+                <span>MY DELIVERIES ({{ $assignedCount + $dispatchedCount }})</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                </svg>
+            </a>
 
             <form action="{{ route('driver-terminal.logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold rounded-3 shadow">
+                <button type="submit" class="btn btn-outline-danger btn-lg w-100 fw-bold rounded-3">
                     LOGOUT
                 </button>
             </form>

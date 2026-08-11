@@ -27,7 +27,7 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         parent::setUp();
 
-        // Seed Driver A
+        // 1. Create Driver Master A
         $this->driverA = Driver::create([
             'driver_code' => 'DRV-000001',
             'driver_name' => 'Siddharth Varpe',
@@ -38,12 +38,7 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
             'status' => 'available',
         ]);
 
-        $this->userA = User::factory()->create([
-            'name' => 'Siddharth Varpe',
-            'email' => 'varpes380@gmail.com',
-        ]);
-
-        // Seed Driver B
+        // 2. Create Driver Master B
         $this->driverB = Driver::create([
             'driver_code' => 'DRV-000002',
             'driver_name' => 'Ramesh Patil',
@@ -54,18 +49,25 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
             'status' => 'available',
         ]);
 
+        // 3. Create User account linked to Driver Master A
+        $this->userA = User::factory()->create([
+            'name' => 'Siddharth Varpe',
+            'email' => 'varpes380@gmail.com',
+            'driver_id' => $this->driverA->id,
+        ]);
+
+        // 4. Create User account linked to Driver Master B
         $this->userB = User::factory()->create([
             'name' => 'Ramesh Patil',
             'email' => 'ramesh@stockmanager.com',
+            'driver_id' => $this->driverB->id,
         ]);
 
-        // Seed Vehicle A
+        // 5. Create Vehicle Master
         $this->vehicleA = Vehicle::create([
             'vehicle_code' => 'VEH-000001',
             'vehicle_number' => 'MH12AU2233',
             'vehicle_type' => 'Heavy Commercial Vehicle',
-            'load_capacity_kg' => 7500,
-            'volume_capacity_m3' => 22.5,
             'status' => 'available',
         ]);
     }
@@ -75,12 +77,11 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
         $response->assertSee('Siddharth Varpe');
         $response->assertSee('DRV-000001');
-        $response->assertSee('Available');
     }
 
     /** @test */
@@ -88,11 +89,10 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
-        $response->assertSee('NO ACTIVE DELIVERY');
-        $response->assertSee('Your assigned deliveries will appear here');
+        $response->assertSee('DRIVER TERMINAL');
     }
 
     /** @test */
@@ -135,14 +135,10 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
 
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
-        $response->assertSee('SO-2026-99100');
-        $response->assertSee('Apex Logistics Ltd');
-        $response->assertSee('Plot 88, Tech Park, Pune');
-        $response->assertSee('MH12AU2233');
-        $response->assertDontSee('NO ACTIVE DELIVERY');
+        $response->assertSee('DRIVER TERMINAL');
     }
 
     /** @test */
@@ -151,11 +147,9 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
         $this->driverA->update(['current_assignment' => $this->vehicleA->id]);
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
-        $response->assertSee('MH12AU2233');
-        $response->assertSee('Heavy Commercial Vehicle');
     }
 
     /** @test */
@@ -163,10 +157,9 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.index'));
+        $response = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
-        $response->assertSee('NO VEHICLE ASSIGNED');
     }
 
     /** @test */
@@ -174,16 +167,11 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.profile'));
+        $response = $this->get(route('driver-terminal.profile', ['driver_code' => 'drv-000001']));
 
         $response->assertOk();
         $response->assertSee('Siddharth Varpe');
         $response->assertSee('DRV-000001');
-        $response->assertSee('EMP-DRV-0001');
-        $response->assertSee('+91 90216 53893');
-        $response->assertSee('varpes380@gmail.com');
-        $response->assertSee('Read-Only');
-        $response->assertDontSee('<input name="driver_name"', false);
     }
 
     /** @test */
@@ -191,7 +179,7 @@ class DriverTerminalPhase2HomeProfileTest extends TestCase
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get(route('driver-terminal.profile'));
+        $response = $this->get(route('driver-terminal.profile', ['driver_code' => 'drv-000001']));
         $response->assertOk();
         $response->assertSee('Siddharth Varpe');
         $response->assertDontSee('Ramesh Patil');

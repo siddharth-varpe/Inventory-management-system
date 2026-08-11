@@ -21,7 +21,7 @@
     <!-- Top Navigation & Order Title -->
     <div class="col-12">
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <a href="{{ route('driver-terminal.deliveries') }}" class="btn btn-slate-800 border-slate-700 text-slate-300 btn-sm fw-bold px-3 py-1.5 d-inline-flex align-items-center gap-1">
+            <a href="{{ route('driver-terminal.deliveries.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" class="btn btn-slate-800 border-slate-700 text-slate-300 btn-sm fw-bold px-3 py-1.5 d-inline-flex align-items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-left" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
                 </svg>
@@ -62,90 +62,59 @@
                 ⚠️ {{ session('error') }}
             </div>
         @endif
-
-        <div class="card bg-slate-800 border-slate-700 rounded-3 p-3 mb-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Order Reference</span>
-                    <h4 class="font-monospace text-info fw-extrabold mb-0">{{ $orderCode }}</h4>
-                </div>
-                <div class="text-end">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Priority</span>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill fw-bold small">
-                        {{ ucfirst($delivery->priority ?? 'Normal') }}
-                    </span>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- 1. Customer Information Card -->
+    <!-- Main Delivery Information Card -->
     <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-3 shadow-sm p-3">
-            <div class="d-flex align-items-center gap-2 border-bottom border-slate-700 pb-2 mb-2.5">
-                <div class="avatar-xs rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                        <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                    </svg>
+        <div class="card bg-slate-800 border-slate-700 rounded-3 shadow-sm mb-3">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between border-bottom border-slate-700 pb-3 mb-3">
+                    <div>
+                        <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Order Reference</span>
+                        <h4 class="font-monospace text-info fw-extrabold mb-0">{{ $orderCode }}</h4>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Order Date</span>
+                        <span class="text-white small font-monospace">{{ $orderDate }}</span>
+                    </div>
                 </div>
-                <h6 class="fw-bold text-white mb-0">Customer Information</h6>
-            </div>
 
-            <div class="row g-2">
-                <div class="col-12">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Customer Name</span>
-                    <span class="text-white fw-bold small">{{ $customerName }}</span>
+                <!-- Customer & Delivery Address -->
+                <div class="mb-3 text-start">
+                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold mb-1">Customer / Consignee</span>
+                    <h6 class="text-white fw-bold mb-1">{{ $customerName }}</h6>
+                    <p class="text-slate-300 small mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-geo-alt-fill text-danger me-1" viewBox="0 0 16 16">
+                            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                        </svg>
+                        {{ $address }}
+                    </p>
+                    <div class="d-flex align-items-center gap-2 small text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-telephone-fill text-info" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/>
+                        </svg>
+                        <span class="text-white font-monospace">{{ $contact }}</span>
+                    </div>
                 </div>
-                <div class="col-12">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Destination Address</span>
-                    <span class="text-slate-300 small">{{ $address }}</span>
-                </div>
-                <div class="col-12">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Contact Person / Phone</span>
-                    <span class="text-slate-300 small">{{ $delivery->contact_person ?: $customerName }} ({{ $contact }})</span>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- 2. Delivery & Vehicle Information Card -->
-    <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-3 shadow-sm p-3">
-            <div class="d-flex align-items-center gap-2 border-bottom border-slate-700 pb-2 mb-2.5">
-                <div class="avatar-xs rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center fw-bold">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-truck" viewBox="0 0 16 16">
-                        <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0H.5A1.5 1.5 0 0 1 0 10.5v-7zm1 0v7a.5.5 0 0 0 .5.5h.05a2.001 2.001 0 0 1 3.9 0h5.1a2.001 2.001 0 0 1 3.9 0h.05a.5.5 0 0 0 .5-.5v-2.5a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12v-2.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
-                    </svg>
-                </div>
-                <h6 class="fw-bold text-white mb-0">Delivery & Vehicle Information</h6>
-            </div>
-
-            <div class="row g-2">
-                <div class="col-6">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Order Date</span>
-                    <span class="text-slate-300 small">{{ $orderDate }}</span>
-                </div>
-                <div class="col-6">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Expected Delivery</span>
-                    <span class="text-slate-300 small">{{ $expDate }}</span>
-                </div>
-                <div class="col-6">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Assigned Vehicle</span>
-                    <span class="font-monospace text-cyan fw-bold small">{{ $vehicleReg }}</span>
-                </div>
-                <div class="col-6">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Vehicle Type</span>
-                    <span class="text-slate-300 small">{{ $vehicleType }}</span>
-                </div>
-                <div class="col-12">
-                    <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Assigned Driver</span>
-                    <span class="text-white fw-bold small">{{ $currentDriver->driver_name }} ({{ $currentDriver->driver_code }})</span>
+                <!-- Vehicle & Schedule Grid -->
+                <div class="row g-2 p-2.5 bg-slate-900 rounded-3 border border-slate-700 text-start">
+                    <div class="col-6">
+                        <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Assigned Vehicle</span>
+                        <span class="font-monospace text-cyan fw-bold small d-block">{{ $vehicleReg }}</span>
+                        <span class="text-secondary micro-text">{{ $vehicleType }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary micro-text d-block text-uppercase fw-semibold">Expected Delivery</span>
+                        <span class="text-white fw-bold small d-block">{{ $expDate }}</span>
+                        <span class="text-secondary micro-text">Scheduled</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 3. Delivery Action Section -->
+    <!-- Operational Execution & Accept Action Card -->
     <div class="col-12">
         <div class="card bg-slate-800 border-slate-700 rounded-3 shadow-sm p-3 text-center">
             @if($isAssigned)
@@ -223,7 +192,7 @@
             </div>
             <div class="modal-footer border-slate-700">
                 <button type="button" class="btn btn-slate-700 text-slate-300 fw-bold px-3" data-bs-dismiss="modal">Cancel</button>
-                <form method="POST" action="{{ route('driver-terminal.deliveries.accept', $delivery->id) }}" class="d-inline">
+                <form method="POST" action="{{ route('driver-terminal.deliveries.accept', ['driver_code' => strtolower($currentDriver->driver_code), 'id' => $delivery->id]) }}" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-warning hover-btn-warning text-dark fw-extrabold px-4">
                         ACCEPT DELIVERY

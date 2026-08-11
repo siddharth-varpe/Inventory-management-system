@@ -90,7 +90,7 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
         ]);
     }
 
-    /** @test — Driver A ID + Driver A Mobile -> SUCCESS */
+    /** @test — Driver A ID + Driver A Mobile -> SUCCESS (Redirects to /driver-terminal/drv-000001) */
     public function driver_a_login_with_matching_registered_mobile_succeeds(): void
     {
         $response = $this->post('/driver-terminal/login', [
@@ -98,11 +98,11 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
             'mobile_number' => '9021653893',
         ]);
 
-        $response->assertRedirect('/driver-terminal');
+        $response->assertRedirect('/driver-terminal/drv-000001');
         $this->assertAuthenticatedAs($this->userA);
     }
 
-    /** @test — Driver B ID + Driver B Mobile -> SUCCESS */
+    /** @test — Driver B ID + Driver B Mobile -> SUCCESS (Redirects to /driver-terminal/drv-000002) */
     public function driver_b_login_with_matching_registered_mobile_succeeds(): void
     {
         $response = $this->post('/driver-terminal/login', [
@@ -110,7 +110,7 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
             'mobile_number' => '8988767543',
         ]);
 
-        $response->assertRedirect('/driver-terminal');
+        $response->assertRedirect('/driver-terminal/drv-000002');
         $this->assertAuthenticatedAs($this->userB);
     }
 
@@ -174,17 +174,16 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
         $this->assertGuest();
     }
 
-    /** @test — Authenticated Driver identity resolved on temporary screen */
-    public function authenticated_driver_identity_is_resolved_on_temporary_screen(): void
+    /** @test — Authenticated Driver identity resolved on driver-scoped terminal */
+    public function authenticated_driver_identity_is_resolved_on_driver_scoped_terminal(): void
     {
         $this->actingAs($this->userA);
 
-        $response = $this->get('/driver-terminal');
+        $response = $this->get('/driver-terminal/drv-000001');
         $response->assertStatus(200);
         $response->assertSee('DRIVER TERMINAL');
         $response->assertSee('DRV-000001');
         $response->assertSee('Siddharth Varpe');
-        $response->assertSee('Driver login successful.');
     }
 
     /** @test — Logout invalidates session */
@@ -198,10 +197,10 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
         $this->assertGuest();
     }
 
-    /** @test — Access temporary authenticated page after logout redirects to login */
+    /** @test — Access terminal after logout redirects to login */
     public function accessing_driver_terminal_after_logout_redirects_to_login(): void
     {
-        $response = $this->get('/driver-terminal');
+        $response = $this->get('/driver-terminal/drv-000001');
 
         $response->assertRedirect('/driver-terminal/login');
     }
@@ -211,7 +210,7 @@ class DriverTerminalPhase1LoginSystemTest extends TestCase
     {
         $this->actingAs($this->adminUser);
 
-        $response = $this->get('/driver-terminal');
+        $response = $this->get('/driver-terminal/drv-000001');
 
         $response->assertRedirect('/driver-terminal/login');
     }

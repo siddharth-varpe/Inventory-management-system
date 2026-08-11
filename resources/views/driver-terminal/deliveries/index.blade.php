@@ -17,7 +17,7 @@
         </div>
 
         <!-- Search Form -->
-        <form method="GET" action="{{ route('driver-terminal.deliveries') }}" class="mb-3">
+        <form method="GET" action="{{ route('driver-terminal.deliveries.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" class="mb-3">
             <div class="input-group">
                 <span class="input-group-text bg-slate-800 border-slate-700 text-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
@@ -26,7 +26,7 @@
                 </span>
                 <input type="text" name="search" class="form-control bg-slate-800 border-slate-700 text-white shadow-none placeholder-slate" placeholder="Search Order ID, Customer, Address..." value="{{ $search }}">
                 @if(!empty($search))
-                    <a href="{{ route('driver-terminal.deliveries') }}" class="btn btn-outline-secondary border-slate-700 text-secondary">Clear</a>
+                    <a href="{{ route('driver-terminal.deliveries.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" class="btn btn-outline-secondary border-slate-700 text-secondary">Clear</a>
                 @endif
                 <button type="submit" class="btn btn-primary fw-bold px-3">Search</button>
             </div>
@@ -100,7 +100,7 @@
                     </div>
 
                     <!-- Card Action Button -->
-                    <a href="{{ route('driver-terminal.deliveries.show', $d->id) }}" class="btn btn-slate-700 hover-btn-primary text-white w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
+                    <a href="{{ route('driver-terminal.deliveries.show', ['driver_code' => strtolower($currentDriver->driver_code), 'id' => $d->id]) }}" class="btn btn-slate-700 hover-btn-primary text-white w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
                         <span>VIEW DELIVERY</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/>

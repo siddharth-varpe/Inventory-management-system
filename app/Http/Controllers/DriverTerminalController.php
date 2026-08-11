@@ -7,11 +7,16 @@ namespace App\Http\Controllers;
 use App\Models\TransportTrip;
 use App\Models\TransportRequest;
 use App\Models\Driver;
+use App\Models\Vehicle;
+use App\Models\User;
 use App\Domain\Transport\DriverExecutionEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DriverTerminalController extends Controller
 {
@@ -20,21 +25,12 @@ class DriverTerminalController extends Controller
     ) {}
 
     /**
-     * Driver Terminal Workspace (/driver)
+     * Driver Terminal Workspace (/driver-terminal/{driver_code})
      */
-    public function index(Request $request): View
+    public function index(Request $request, ?string $driver_code = null): View
     {
-        // Identify Driver Context from Authenticated Session / Request attributes
+        /** @var Driver|null $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
-
-        if (!$currentDriver && auth()->check()) {
-            $user = auth()->user();
-            $currentDriver = Driver::where('email', $user->email)
-                ->orWhere('phone_number', $user->phone ?? null)
-                ->orWhere('id', $user->driver_id ?? null)
-                ->first();
-        }
-
         $driverId = $currentDriver?->id;
 
         $assignedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count() : 0;
@@ -47,7 +43,7 @@ class DriverTerminalController extends Controller
             ->latest()
             ->first() : null;
 
-        $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
+        $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? Vehicle::find($currentDriver?->current_assignment) : null);
 
         return view('driver-terminal.home.index', [
             'currentDriver' => $currentDriver,
@@ -60,93 +56,33 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Driver Accepts Trip
+     * Driver Terminal Login Page (GET /driver-terminal/login)
      */
-    public function acceptTrip(Request $request, TransportTrip $transportTrip): RedirectResponse
+    public function login(Request $request): View|RedirectResponse
     {
-        $driverId = $request->input('driver_id', $transportTrip->driver_id);
-        $driver = Driver::findOrFail($driverId);
+        if (Auth::check()) {
+            $user = Auth::user();
+            $driver = null;
+            if (!empty($user->driver_id)) {
+                $driver = Driver::find($user->driver_id);
+            }
+            if (!$driver && !empty($user->email)) {
+                $driver = Driver::where('email', strtolower($user->email))->first();
+            }
+            if (!$driver && !empty($user->phone)) {
+                $driver = Driver::where('phone_number', $user->phone)->first();
+            }
 
-        try {
-            $this->executionEngine->acceptTrip($transportTrip, $driver, auth()->id() ?? 1);
-            return redirect()->back()->with('success', "Trip #{$transportTrip->trip_number} Accepted! Safe driving.");
-        } catch (\InvalidArgumentException $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
-    }
-
-    /**
-     * Driver Updates Operational Delivery Status
-     */
-    public function updateStatus(Request $request, TransportRequest $transportRequest): RedirectResponse
-    {
-        $validated = $request->validate([
-            'status' => 'required|string',
-            'notes' => 'nullable|string',
-            'driver_id' => 'nullable|integer|exists:drivers,id',
-        ]);
-
-        $driverId = $validated['driver_id'] ?? $transportRequest->driver_id ?? 1;
-        $driver = Driver::findOrFail($driverId);
-
-        try {
-            $this->executionEngine->updateDeliveryStatus($transportRequest, $validated['status'], $validated['notes'] ?? null, $driver, auth()->id() ?? 1);
-            return redirect()->back()->with('success', "Delivery status updated to '" . (DriverExecutionEngine::ALLOWED_STATUSES[$validated['status']] ?? $validated['status']) . "'.");
-        } catch (\InvalidArgumentException $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
-    }
-
-    /**
-     * Driver Terminal Live Sync API Endpoint
-     */
-    public function liveSync(Request $request): JsonResponse
-    {
-        $driverId = $request->input('driver_id', 1);
-        $driver = Driver::find($driverId);
-
-        if (!$driver) {
-            return response()->json(['success' => false, 'message' => 'Driver not found']);
+            if ($driver && !in_array(strtolower((string) $driver->status), ['suspended', 'blocked', 'inactive', 'deactivated'])) {
+                return redirect()->route('driver-terminal.index', ['driver_code' => strtolower($driver->driver_code)]);
+            }
         }
 
-        $activeTrips = TransportTrip::with(['transportRequests', 'vehicle', 'dispatchManifest'])
-            ->where('driver_id', $driver->id)
-            ->whereIn('status', ['created', 'ready', 'dispatched'])
-            ->get()
-            ->map(function ($t) {
-                return [
-                    'id' => $t->id,
-                    'trip_number' => $t->trip_number,
-                    'manifest_number' => $t->dispatchManifest->manifest_number ?? 'MAN-Pending',
-                    'vehicle_number' => $t->vehicle->vehicle_number ?? 'N/A',
-                    'destination_city' => $t->destination_city,
-                    'status_label' => $t->status_label,
-                    'orders_count' => $t->transportRequests->count(),
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'driver_name' => $driver->driver_name,
-            'driver_status' => $driver->status,
-            'active_trips_count' => count($activeTrips),
-            'trips' => $activeTrips,
-        ]);
-    }
-
-    /**
-     * Phase 1 — Driver Login Page (NO OTP)
-     */
-    public function login(): View
-    {
         return view('driver-terminal.auth.login');
     }
 
     /**
-     * Phase 1 — Driver Authentication Action
-     */
-    /**
-     * Phase 1 — Driver Authentication Action (DRIVER ID + REGISTERED MOBILE NUMBER)
+     * Driver Authentication Action (POST /driver-terminal/login)
      */
     public function authenticate(Request $request): RedirectResponse|JsonResponse
     {
@@ -203,19 +139,19 @@ class DriverTerminalController extends Controller
         }
 
         // 5. Match or Link User Record for Laravel Session Authentication
-        $user = \App\Models\User::where('driver_id', $driver->id)->first();
+        $user = User::where('driver_id', $driver->id)->first();
         if (!$user && !empty($driver->email)) {
-            $user = \App\Models\User::where('email', strtolower($driver->email))->first();
+            $user = User::where('email', strtolower($driver->email))->first();
         }
         if (!$user && !empty($driver->phone_number)) {
-            $user = \App\Models\User::where('phone', $driver->phone_number)->first();
+            $user = User::where('phone', $driver->phone_number)->first();
         }
 
         if (!$user) {
-            $user = \App\Models\User::create([
+            $user = User::create([
                 'name' => $driver->driver_name,
                 'email' => $driver->email ?: (strtolower($driver->driver_code) . '@stockmanager.com'),
-                'password' => \Illuminate\Support\Facades\Hash::make('DriverSecurePass2026!'),
+                'password' => Hash::make('DriverSecurePass2026!'),
                 'driver_id' => $driver->id,
                 'status' => 'active',
             ]);
@@ -224,9 +160,11 @@ class DriverTerminalController extends Controller
             $user->save();
         }
 
-        // 6. Log in user securely & regenerate session
-        \Illuminate\Support\Facades\Auth::login($user, (bool) $request->input('remember', false));
+        // 6. Log in user securely & regenerate session ID (Protects against session fixation)
+        Auth::login($user, (bool) $request->input('remember', false));
         $request->session()->regenerate();
+
+        $canonicalDriverCode = strtolower((string) $driver->driver_code);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -234,19 +172,20 @@ class DriverTerminalController extends Controller
                 'message' => 'Welcome back, ' . $driver->driver_name,
                 'driver_code' => $driver->driver_code,
                 'driver_name' => $driver->driver_name,
-                'redirect_url' => route('driver-terminal.index'),
+                'redirect_url' => route('driver-terminal.index', ['driver_code' => $canonicalDriverCode]),
             ]);
         }
 
-        return redirect()->intended(route('driver-terminal.index'))->with('success', 'Welcome back, ' . $driver->driver_name);
+        return redirect()->intended(route('driver-terminal.index', ['driver_code' => $canonicalDriverCode]))
+            ->with('success', 'Welcome back, ' . $driver->driver_name);
     }
 
     /**
-     * Phase 1 — Secure Driver Logout
+     * Secure Driver Logout (POST /driver-terminal/logout)
      */
     public function logout(Request $request): RedirectResponse|JsonResponse
     {
-        \Illuminate\Support\Facades\Auth::logout();
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -257,32 +196,14 @@ class DriverTerminalController extends Controller
         return redirect()->route('driver-terminal.login')->with('success', 'You have been logged out.');
     }
 
-    private function loginFailedResponse(Request $request, string $message): RedirectResponse|JsonResponse
-    {
-        if ($request->expectsJson()) {
-            return response()->json(['success' => false, 'message' => $message], 422);
-        }
-
-        return redirect()->back()
-            ->withErrors(['driver_id' => $message])
-            ->withInput($request->only('driver_id', 'mobile_number'));
-    }
-
     /**
-     * Phase 3 — Driver Delivery Queue (My Deliveries)
+     * Driver Delivery Queue (/driver-terminal/{driver_code}/deliveries)
      */
-    public function deliveries(Request $request): View
+    public function deliveries(Request $request, ?string $driver_code = null): View
     {
+        /** @var Driver $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
-        if (!$currentDriver && auth()->check()) {
-            $user = auth()->user();
-            $currentDriver = Driver::where('driver_code', $user->driver_id)
-                ->orWhere('id', $user->driver_id)
-                ->orWhere('email', strtolower($user->email))
-                ->first();
-        }
-
-        $driverId = $currentDriver?->id;
+        $driverId = $currentDriver->id;
         $search = trim((string) $request->query('search', ''));
 
         $query = TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver'])
@@ -303,7 +224,6 @@ class DriverTerminalController extends Controller
             });
         }
 
-        // Order ASSIGNED first, then DISPATCHED, by newest assignment time
         $deliveries = $query->get()->sortBy(function ($item) {
             $statusWeight = in_array(strtolower($item->status), ['driver_vehicle_assigned', 'assigned']) ? 1 : 2;
             return $statusWeight . '_' . (9999999999 - strtotime((string) ($item->updated_at ?? $item->created_at)));
@@ -317,24 +237,18 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Phase 3 — Delivery Details Page
+     * Delivery Details Page (/driver-terminal/{driver_code}/deliveries/{id})
      */
-    public function showDelivery(Request $request, int $id): View
+    public function showDelivery(Request $request, string $driver_code, int $id): View|RedirectResponse
     {
+        /** @var Driver $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
-        if (!$currentDriver && auth()->check()) {
-            $user = auth()->user();
-            $currentDriver = Driver::where('driver_code', $user->driver_id)
-                ->orWhere('id', $user->driver_id)
-                ->orWhere('email', strtolower($user->email))
-                ->first();
-        }
-
         $delivery = TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver'])->findOrFail($id);
 
-        // IDOR Authorization Protection
-        if ((int) $delivery->driver_id !== (int) $currentDriver?->id) {
-            return redirect()->route('driver-terminal.index')->with('error', 'Unauthorized access to requested delivery resource.');
+        // IDOR Authorization Check: Delivery MUST belong to authenticated driver
+        if ((int) $delivery->driver_id !== (int) $currentDriver->id) {
+            return redirect()->route('driver-terminal.index', ['driver_code' => strtolower($currentDriver->driver_code)])
+                ->with('error', 'Access denied. You do not have permission to view or manage this delivery.');
         }
 
         return view('driver-terminal.deliveries.show', [
@@ -344,31 +258,16 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Phase 3 — Accept Delivery Action (Server-Side DB Transaction)
+     * Accept Delivery Action (/driver-terminal/{driver_code}/deliveries/{id}/accept)
      */
-    public function acceptDelivery(Request $request, int $id): JsonResponse|RedirectResponse
+    public function acceptDelivery(Request $request, string $driver_code, int $id): JsonResponse|RedirectResponse
     {
+        /** @var Driver $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
-        if (!$currentDriver && auth()->check()) {
-            $user = auth()->user();
-            $currentDriver = Driver::where('driver_code', $user->driver_id)
-                ->orWhere('id', $user->driver_id)
-                ->orWhere('email', strtolower($user->email))
-                ->first();
-        }
 
-        if (!$currentDriver) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized driver session.'], 403);
-            }
-            return redirect()->route('driver-terminal.login')->withErrors(['driver_identifier' => 'Unauthorized driver session.']);
-        }
-
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $currentDriver) {
+        return DB::transaction(function () use ($request, $id, $currentDriver) {
             /** @var TransportRequest|null $delivery */
-            $delivery = TransportRequest::where('id', $id)
-                ->lockForUpdate()
-                ->first();
+            $delivery = TransportRequest::where('id', $id)->lockForUpdate()->first();
 
             if (!$delivery) {
                 if ($request->expectsJson()) {
@@ -377,15 +276,15 @@ class DriverTerminalController extends Controller
                 return redirect()->back()->with('error', 'Delivery request not found.');
             }
 
-            // IDOR Protection Check
+            // IDOR Authorization Protection Check
             if ((int) $delivery->driver_id !== (int) $currentDriver->id) {
                 if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Unauthorized access to requested delivery resource.'], 403);
+                    return response()->json(['success' => false, 'message' => 'Access denied. You do not have permission to view or manage this delivery.'], 403);
                 }
-                return redirect()->back()->with('error', 'Unauthorized access to requested delivery resource.');
+                return redirect()->route('driver-terminal.index', ['driver_code' => strtolower($currentDriver->driver_code)])
+                    ->with('error', 'Access denied. You do not have permission to view or manage this delivery.');
             }
 
-            // Status verification & Double-Accept Protection
             $currentStatus = strtolower((string) $delivery->status);
             if ($currentStatus === 'dispatched') {
                 if ($request->expectsJson()) {
@@ -408,25 +307,24 @@ class DriverTerminalController extends Controller
                 return redirect()->back()->with('error', 'This delivery is no longer available for acceptance.');
             }
 
-            // Perform State Transition: ASSIGNED -> DISPATCHED
             $now = now();
             $delivery->status = 'dispatched';
             $delivery->dispatched_at = $now;
             $delivery->accepted_at = $now;
-            $delivery->accepted_by = auth()->id();
-            $delivery->dispatched_by = auth()->id();
+            $delivery->accepted_by = Auth::id();
+            $delivery->dispatched_by = Auth::id();
             $delivery->save();
 
-            // Also update driver status to 'on_delivery' if available
             if ($currentDriver->status !== 'suspended') {
                 $currentDriver->status = 'on_delivery';
                 $currentDriver->save();
             }
 
-            // Record enterprise activity log if supported
             if (method_exists($delivery, 'logActivity')) {
                 $delivery->logActivity('delivery_accepted', 'Delivery accepted by driver ' . $currentDriver->driver_code . ' (' . $currentDriver->driver_name . ')');
             }
+
+            $canonicalDriverCode = strtolower((string) $currentDriver->driver_code);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -434,38 +332,58 @@ class DriverTerminalController extends Controller
                     'message' => 'Delivery accepted successfully! Transport status is now DISPATCHED.',
                     'status' => 'dispatched',
                     'dispatched_at' => $now->format('d M Y, h:i A'),
-                    'redirect_url' => route('driver-terminal.deliveries.show', $id),
+                    'redirect_url' => route('driver-terminal.deliveries.show', ['driver_code' => $canonicalDriverCode, 'id' => $id]),
                 ]);
             }
 
-            return redirect()->route('driver-terminal.deliveries.show', $id)
+            return redirect()->route('driver-terminal.deliveries.show', ['driver_code' => $canonicalDriverCode, 'id' => $id])
                 ->with('success', 'Delivery accepted successfully! Transport status is now DISPATCHED.');
         });
     }
 
     /**
-     * Phase 2 — Driver Profile Page (Read-Only)
+     * Driver Updates Operational Delivery Status
      */
-    public function profile(Request $request): View
+    public function updateStatus(Request $request, string $driver_code, int $id): RedirectResponse
     {
+        /** @var Driver $currentDriver */
         $currentDriver = $request->attributes->get('current_driver');
+        $transportRequest = TransportRequest::findOrFail($id);
 
-        if (!$currentDriver && auth()->check()) {
-            $user = auth()->user();
-            $currentDriver = Driver::where('email', $user->email)
-                ->orWhere('phone_number', $user->phone ?? null)
-                ->orWhere('id', $user->driver_id ?? null)
-                ->first();
+        if ((int) $transportRequest->driver_id !== (int) $currentDriver->id) {
+            return redirect()->route('driver-terminal.index', ['driver_code' => strtolower($currentDriver->driver_code)])
+                ->with('error', 'Access denied. You do not have permission to view or manage this delivery.');
         }
 
-        $driverId = $currentDriver?->id;
-        $activeDelivery = $driverId ? TransportRequest::with('vehicle')
+        $validated = $request->validate([
+            'status' => 'required|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            $this->executionEngine->updateDeliveryStatus($transportRequest, $validated['status'], $validated['notes'] ?? null, $currentDriver, Auth::id() ?? 1);
+            return redirect()->back()->with('success', "Delivery status updated to '" . (DriverExecutionEngine::ALLOWED_STATUSES[$validated['status']] ?? $validated['status']) . "'.");
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Driver Profile Page (Read-Only)
+     */
+    public function profile(Request $request, ?string $driver_code = null): View
+    {
+        /** @var Driver $currentDriver */
+        $currentDriver = $request->attributes->get('current_driver');
+        $driverId = $currentDriver->id;
+
+        $activeDelivery = TransportRequest::with('vehicle')
             ->where('driver_id', $driverId)
             ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
             ->latest()
-            ->first() : null;
+            ->first();
 
-        $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? \App\Models\Vehicle::find($currentDriver?->current_assignment) : null);
+        $assignedVehicle = $activeDelivery?->vehicle ?? Vehicle::find($currentDriver->current_assignment);
 
         return view('driver-terminal.profile.index', [
             'currentDriver' => $currentDriver,
@@ -474,10 +392,64 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Phase 0 Foundational Stub: Notifications
+     * Notifications Page
      */
-    public function notifications(): View
+    public function notifications(Request $request, ?string $driver_code = null): View
     {
-        return view('driver-terminal.notifications.index');
+        /** @var Driver $currentDriver */
+        $currentDriver = $request->attributes->get('current_driver');
+
+        return view('driver-terminal.notifications.index', [
+            'currentDriver' => $currentDriver,
+        ]);
+    }
+
+    /**
+     * Driver Terminal Live Sync API Endpoint
+     */
+    public function liveSync(Request $request): JsonResponse
+    {
+        /** @var Driver|null $driver */
+        $driver = $request->attributes->get('current_driver');
+
+        if (!$driver) {
+            return response()->json(['success' => false, 'message' => 'Driver not authenticated'], 401);
+        }
+
+        $activeTrips = TransportTrip::with(['transportRequests', 'vehicle', 'dispatchManifest'])
+            ->where('driver_id', $driver->id)
+            ->whereIn('status', ['created', 'ready', 'dispatched'])
+            ->get()
+            ->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'trip_number' => $t->trip_number,
+                    'manifest_number' => $t->dispatchManifest->manifest_number ?? 'MAN-Pending',
+                    'vehicle_number' => $t->vehicle->vehicle_number ?? 'N/A',
+                    'destination_city' => $t->destination_city,
+                    'status_label' => $t->status_label,
+                    'orders_count' => $t->transportRequests->count(),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'driver_code' => $driver->driver_code,
+            'driver_name' => $driver->driver_name,
+            'driver_status' => $driver->status,
+            'active_trips_count' => count($activeTrips),
+            'trips' => $activeTrips,
+        ]);
+    }
+
+    private function loginFailedResponse(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['success' => false, 'message' => $message], 422);
+        }
+
+        return redirect()->back()
+            ->withErrors(['driver_id' => $message])
+            ->withInput($request->only('driver_id', 'mobile_number'));
     }
 }

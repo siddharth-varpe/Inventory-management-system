@@ -26,11 +26,6 @@ class DriverTerminalPhase0FoundationTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create([
-            'email' => 'rajesh@stockmanager.com',
-        ]);
-        $this->actingAs($this->user);
-
         // Seed Driver Master
         $this->driver = Driver::create([
             'driver_code' => 'DRV-000001',
@@ -41,6 +36,12 @@ class DriverTerminalPhase0FoundationTest extends TestCase
             'email' => 'rajesh@stockmanager.com',
             'status' => 'available',
         ]);
+
+        $this->user = User::factory()->create([
+            'email' => 'rajesh@stockmanager.com',
+            'driver_id' => $this->driver->id,
+        ]);
+        $this->actingAs($this->user);
 
         // Seed Vehicle Master
         $this->vehicle = Vehicle::create([
@@ -113,12 +114,8 @@ class DriverTerminalPhase0FoundationTest extends TestCase
     /** @test */
     public function test_driver_terminal_foundational_routes_resolve_cleanly(): void
     {
-        // 1. Guest login route
-        $loginRes = $this->get(route('driver-terminal.login'));
-        $loginRes->assertOk();
-
-        // 2. Authenticated terminal workspace
-        $indexRes = $this->get(route('driver-terminal.index'));
+        // 1. Authenticated terminal workspace
+        $indexRes = $this->get(route('driver-terminal.index', ['driver_code' => 'drv-000001']));
         $indexRes->assertOk();
     }
 

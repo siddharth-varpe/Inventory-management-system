@@ -119,7 +119,7 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     /** @test */
     public function authenticated_driver_can_view_assigned_deliveries_list(): void
     {
-        $response = $this->actingAs($this->userA)->get('/driver-terminal/deliveries');
+        $response = $this->actingAs($this->userA)->get('/driver-terminal/drv-000001/deliveries');
 
         $response->assertStatus(200);
         $response->assertSee('My Deliveries');
@@ -131,7 +131,7 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     /** @test */
     public function driver_search_filters_deliveries_by_order_reference(): void
     {
-        $response = $this->actingAs($this->userA)->get('/driver-terminal/deliveries?search=SO-2026-00001');
+        $response = $this->actingAs($this->userA)->get('/driver-terminal/drv-000001/deliveries?search=SO-2026-00001');
 
         $response->assertStatus(200);
         $response->assertSee('SO-2026-00001');
@@ -140,7 +140,7 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     /** @test */
     public function authenticated_driver_can_view_delivery_details(): void
     {
-        $response = $this->actingAs($this->userA)->get("/driver-terminal/deliveries/{$this->deliveryA->id}");
+        $response = $this->actingAs($this->userA)->get("/driver-terminal/drv-000001/deliveries/{$this->deliveryA->id}");
 
         $response->assertStatus(200);
         $response->assertSee('SO-2026-00001');
@@ -153,7 +153,7 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     public function driver_can_accept_assigned_delivery_updating_status_to_dispatched(): void
     {
         $response = $this->actingAs($this->userA)
-            ->postJson("/driver-terminal/deliveries/{$this->deliveryA->id}/accept");
+            ->postJson("/driver-terminal/drv-000001/deliveries/{$this->deliveryA->id}/accept");
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -174,11 +174,11 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     public function double_acceptance_attempt_is_prevented_with_clean_error(): void
     {
         // First acceptance
-        $this->actingAs($this->userA)->postJson("/driver-terminal/deliveries/{$this->deliveryA->id}/accept");
+        $this->actingAs($this->userA)->postJson("/driver-terminal/drv-000001/deliveries/{$this->deliveryA->id}/accept");
 
         // Second acceptance attempt
         $response = $this->actingAs($this->userA)
-            ->postJson("/driver-terminal/deliveries/{$this->deliveryA->id}/accept");
+            ->postJson("/driver-terminal/drv-000001/deliveries/{$this->deliveryA->id}/accept");
 
         $response->assertStatus(422);
         $response->assertJson([
@@ -190,20 +190,21 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     /** @test */
     public function driver_b_cannot_view_or_accept_driver_a_delivery(): void
     {
-        // Driver B attempts to view Driver A's delivery
-        $viewResponse = $this->actingAs($this->userB)->get("/driver-terminal/deliveries/{$this->deliveryA->id}");
-        $viewResponse->assertStatus(403);
+        // Driver B attempts to view Driver A's delivery URL
+        $viewResponse = $this->actingAs($this->userB)->get("/driver-terminal/drv-000002/deliveries/{$this->deliveryA->id}");
+        $viewResponse->assertRedirect('/driver-terminal/drv-000002');
+        $viewResponse->assertSessionHas('error');
 
-        // Driver B attempts to accept Driver A's delivery
+        // Driver B attempts to accept Driver A's delivery via JSON
         $acceptResponse = $this->actingAs($this->userB)
-            ->postJson("/driver-terminal/deliveries/{$this->deliveryA->id}/accept");
+            ->postJson("/driver-terminal/drv-000002/deliveries/{$this->deliveryA->id}/accept");
         $acceptResponse->assertStatus(403);
     }
 
     /** @test */
     public function driver_with_no_assigned_deliveries_sees_clean_empty_state(): void
     {
-        $response = $this->actingAs($this->userB)->get('/driver-terminal/deliveries');
+        $response = $this->actingAs($this->userB)->get('/driver-terminal/drv-000002/deliveries');
 
         $response->assertStatus(200);
         $response->assertSee('NO ASSIGNED DELIVERIES');
@@ -211,10 +212,10 @@ class DriverTerminalPhase3AcceptanceTest extends TestCase
     }
 
     /** @test */
-    public function unlinked_administrator_account_receives_403_forbidden(): void
+    public function unlinked_administrator_account_redirects_to_login(): void
     {
-        $response = $this->actingAs($this->adminUser)->get('/driver-terminal/deliveries');
+        $response = $this->actingAs($this->adminUser)->get('/driver-terminal/drv-000001/deliveries');
 
-        $response->assertStatus(403);
+        $response->assertRedirect('/driver-terminal/login');
     }
 }
