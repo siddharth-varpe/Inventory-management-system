@@ -677,6 +677,10 @@ class TransportController extends Controller
      */
     public function assignVehicle(Request $request, TransportRequest $transportRequest): RedirectResponse
     {
+        if (in_array($transportRequest->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+            return redirect()->back()->with('error', "Reassignment is not allowed because this delivery has already been dispatched.");
+        }
+
         $validated = $request->validate([
             'vehicle_id' => 'required|integer|exists:vehicles,id',
         ]);
@@ -694,6 +698,10 @@ class TransportController extends Controller
      */
     public function assignDriver(Request $request, TransportRequest $transportRequest): RedirectResponse
     {
+        if (in_array($transportRequest->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+            return redirect()->back()->with('error', "Reassignment is not allowed because this delivery has already been dispatched.");
+        }
+
         $validated = $request->validate([
             'driver_id' => 'required|integer|exists:drivers,id',
         ]);
@@ -705,6 +713,7 @@ class TransportController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
 
     /**
      * Transport Trip Creation Endpoint
@@ -939,6 +948,14 @@ class TransportController extends Controller
      */
     public function assignDriverAndVehicle(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
     {
+        if (in_array($transportRequest->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+            $msg = "Reassignment is not allowed because this delivery has already been dispatched.";
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         $validated = $request->validate([
             'driver_id' => 'required|integer|exists:drivers,id',
             'vehicle_id' => 'required|integer|exists:vehicles,id',
@@ -982,6 +999,24 @@ class TransportController extends Controller
      */
     public function reassignDriverAndVehicle(Request $request, TransportRequest $transportRequest): JsonResponse|RedirectResponse
     {
+        if (in_array($transportRequest->status, ['dispatched', 'in_transit', 'out_for_delivery', 'delivered', 'completed'])) {
+            $msg = "Reassignment is not allowed because this delivery has already been dispatched.";
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $newDriverId = $request->input('new_driver_id') ?? $request->input('driver_id');
+        $newVehicleId = $request->input('new_vehicle_id') ?? $request->input('vehicle_id');
+        $reason = $request->input('reassignment_reason') ?? $request->input('reason', 'Driver & Vehicle Reassignment');
+
+        $request->merge([
+            'new_driver_id' => $newDriverId,
+            'new_vehicle_id' => $newVehicleId,
+            'reassignment_reason' => $reason,
+        ]);
+
         $validated = $request->validate([
             'new_driver_id' => 'required|integer|exists:drivers,id',
             'new_vehicle_id' => 'required|integer|exists:vehicles,id',

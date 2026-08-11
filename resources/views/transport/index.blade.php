@@ -356,8 +356,12 @@
             @if($activeTab === 'history')
                 @include('transport.partials.history')
             @endif
+
+            <!-- SHARED TRANSPORT MODALS -->
+            @include('transport.partials.shared-modals')
         </div>
 
     </div>
 </div>
 @endsection
+
