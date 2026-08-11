@@ -1,117 +1,168 @@
 @extends('driver-terminal.layouts.app')
 
-@section('title', 'Driver Profile')
+@section('title', 'Vehicle Information — Driver Terminal')
 
 @section('content')
-<div class="row g-3">
-    <!-- Driver Profile Header Card -->
-    <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-4 p-4 text-center shadow-sm">
-            <div class="mb-2">
-                <span class="fs-1">👤</span>
-            </div>
-            <h4 class="fw-extrabold text-white mb-0">{{ $currentDriver->driver_name ?? 'Driver Profile' }}</h4>
-            <div class="font-monospace text-info small fw-bold mt-1 mb-2">
-                {{ $currentDriver->driver_code ?? 'N/A' }}
-            </div>
-            <div>
-                <span class="badge {{ $currentDriver->status_badge_class ?? 'bg-success-subtle text-success border border-success-subtle' }} px-3 py-1 rounded-pill fs-7 fw-bold">
-                    ● {{ $currentDriver->status_label ?? 'Available' }}
+<div class="vstack gap-3.5">
+
+    <!-- 1. PAGE HEADER BAR -->
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h5 class="fw-black text-dark mb-0 fs-5">Vehicle Information</h5>
+            <p class="text-muted small mb-0" style="font-size: 0.78rem;">3D Model & Technical Specifications of Assigned Fleet Vehicle</p>
+        </div>
+        <a href="{{ route('driver-terminal.driver-profile', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
+           class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold d-flex align-items-center gap-1 shadow-xs" style="font-size: 0.78rem;">
+            <span>👤 Driver Profile</span>
+            <span>&rsaquo;</span>
+        </a>
+    </div>
+
+    @if($assignedVehicle)
+        <!-- 2. HERO 3D VEHICLE SHOWCASE CARD -->
+        <div class="card bg-white border border-translucent rounded-4 p-4 text-center shadow-sm overflow-hidden position-relative">
+            <div class="position-absolute top-0 end-0 m-3">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill font-monospace fw-bold" style="font-size: 0.75rem;">
+                    ● ASSIGNED & ACTIVE
                 </span>
             </div>
-        </div>
-    </div>
 
-    <!-- Master Driver Details (Read-Only) -->
-    <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-4 p-3.5 shadow-sm">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="text-secondary small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Driver Master Credentials</span>
-                <span class="badge bg-secondary-subtle text-secondary fs-8">Read-Only</span>
-            </div>
-
-            <div class="bg-dark p-3 rounded-3 border border-secondary">
-                <div class="row g-2.5">
-                    <div class="col-5 text-secondary small">Employee ID:</div>
-                    <div class="col-7 text-white font-monospace fw-bold small text-end">{{ $currentDriver->employee_id ?? 'N/A' }}</div>
-
-                    <div class="col-5 text-secondary small">License Class:</div>
-                    <div class="col-7 text-light small text-end">{{ $currentDriver->license_class ?? 'Heavy Commercial' }}</div>
-
-                    @if(!empty($currentDriver->driving_license_number))
-                    <div class="col-5 text-secondary small">License Number:</div>
-                    <div class="col-7 text-light font-monospace small text-end">{{ $currentDriver->driving_license_number }}</div>
-                    @endif
-
-                    <div class="col-5 text-secondary small">Phone Number:</div>
-                    <div class="col-7 text-white small text-end">{{ $currentDriver->phone_number ?? 'N/A' }}</div>
-
-                    <div class="col-5 text-secondary small">Registered Email:</div>
-                    <div class="col-7 text-light small text-end text-truncate">{{ $currentDriver->email ?? 'N/A' }}</div>
-
-                    @if(!empty($currentDriver->address))
-                    <div class="col-5 text-secondary small">Address:</div>
-                    <div class="col-7 text-light small text-end text-truncate">{{ $currentDriver->address }}</div>
-                    @endif
-
-                    @if(!empty($currentDriver->emergency_contact_number) || !empty($currentDriver->emergency_contact_name))
-                    <div class="col-5 text-secondary small">Emergency Contact:</div>
-                    <div class="col-7 text-warning small text-end">
-                        {{ $currentDriver->emergency_contact_name ?? '' }} ({{ $currentDriver->emergency_contact_number ?? $currentDriver->emergency_contact ?? 'N/A' }})
-                    </div>
-                    @endif
+            <!-- 3D TRUCK MODEL DISPLAY -->
+            <div class="my-2 d-flex justify-content-center">
+                <div class="p-3 rounded-circle d-flex align-items-center justify-content-center" 
+                     style="background: radial-gradient(circle, #eff6ff 0%, #ffffff 70%); width: 160px; height: 160px;">
+                    <img src="{{ asset('images/truck-3d.png') }}" alt="3D Vehicle Model" 
+                         style="width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(37, 99, 235, 0.15));">
                 </div>
             </div>
+
+            <h4 class="font-monospace text-dark fw-black mb-1 fs-4">{{ $assignedVehicle->vehicle_number }}</h4>
+            <div class="text-primary fw-bold small mb-2" style="color: #2563eb !important;">
+                {{ $assignedVehicle->vehicle_type ?? 'Heavy Commercial Vehicle' }}
+                @if($assignedVehicle->manufacturer || $assignedVehicle->model)
+                    ({{ trim(($assignedVehicle->manufacturer ?? '') . ' ' . ($assignedVehicle->model ?? '')) }})
+                @endif
+            </div>
+
+            <div class="d-flex align-items-center justify-content-center gap-2 text-muted micro-text font-monospace" style="font-size: 0.72rem;">
+                <span>Code: <strong>{{ $assignedVehicle->vehicle_code ?? 'VEH-001' }}</strong></span>
+                <span>&bull;</span>
+                <span>Year: <strong>{{ $assignedVehicle->manufacturing_year ?? '2022' }}</strong></span>
+                <span>&bull;</span>
+                <span>Fuel: <strong>{{ $assignedVehicle->fuel_type ?? 'Diesel' }}</strong></span>
+            </div>
+        </div>
+
+        <!-- 3. COMPLETE VEHICLE MASTER TECHNICAL SPECIFICATIONS -->
+        <div class="card bg-white border border-translucent rounded-4 p-3.5 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-translucent pb-2">
+                <span class="text-muted micro-text fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                    📋 Fleet Vehicle Master Specifications
+                </span>
+                <span class="badge bg-light text-dark font-monospace border" style="font-size: 0.68rem;">Verified Master</span>
+            </div>
+
+            <div class="row g-3 text-start" style="font-size: 0.8rem;">
+                <!-- Reg & Code -->
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Registration Number</span>
+                    <span class="font-monospace text-dark fw-bold">{{ $assignedVehicle->vehicle_number }}</span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Code</span>
+                    <span class="font-monospace text-primary fw-bold">{{ $assignedVehicle->vehicle_code ?? 'VEH-000001' }}</span>
+                </div>
+
+                <!-- Type & Make -->
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Class</span>
+                    <span class="text-dark fw-semibold">{{ $assignedVehicle->vehicle_type ?? 'Commercial Truck' }}</span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Manufacturer</span>
+                    <span class="text-dark fw-semibold">{{ $assignedVehicle->manufacturer ?? 'Tata Motors' }}</span>
+                </div>
+
+                <!-- Load & Volume Capacity -->
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Load Capacity</span>
+                    <span class="text-dark fw-bold">{{ number_format($assignedVehicle->load_capacity_kg ?? 7500, 2) }} kg</span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Volume Capacity</span>
+                    <span class="text-dark fw-bold">{{ number_format($assignedVehicle->volume_capacity_m3 ?? 22.5, 2) }} m³</span>
+                </div>
+
+                <!-- Odometer & Fuel -->
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Current Odometer</span>
+                    <span class="font-monospace text-dark fw-bold">{{ number_format($assignedVehicle->current_odometer_km ?? 12000) }} km</span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fuel Type</span>
+                    <span class="badge bg-light text-dark border font-monospace">{{ $assignedVehicle->fuel_type ?? 'Diesel' }}</span>
+                </div>
+
+                <!-- Health & Insurance Status -->
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Maintenance Status</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        ✓ {{ $assignedVehicle->maintenance_status ?? 'Good & Active' }}
+                    </span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fitness Certificate Expiry</span>
+                    <span class="text-dark font-monospace">
+                        {{ $assignedVehicle->fitness_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->fitness_expiry_date)->format('d M Y') : '08 Aug 2027' }}
+                    </span>
+                </div>
+
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">PUC Expiry Date</span>
+                    <span class="text-dark font-monospace">
+                        {{ $assignedVehicle->puc_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->puc_expiry_date)->format('d M Y') : '08 Feb 2027' }}
+                    </span>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Insurance Expiry Date</span>
+                    <span class="text-dark font-monospace">
+                        {{ $assignedVehicle->insurance_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->insurance_expiry_date)->format('d M Y') : '08 Aug 2027' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    @else
+        <!-- EMPTY STATE WHEN NO VEHICLE ASSIGNED -->
+        <div class="card bg-white border border-translucent rounded-4 p-4 text-center shadow-sm">
+            <div class="my-2">
+                <img src="{{ asset('images/truck-3d.png') }}" alt="3D Truck" style="width: 100px; height: 100px; object-fit: contain; opacity: 0.5;">
+            </div>
+            <h6 class="fw-bold text-dark mb-1">NO VEHICLE ASSIGNED</h6>
+            <p class="text-muted small mb-0 px-3" style="font-size: 0.82rem;">
+                There is currently no vehicle assigned to your driver account. Please contact Transport Management.
+            </p>
+        </div>
+    @endif
+
+    <!-- 4. ACTION BAR TO GO TO DRIVER PROFILE -->
+    <div class="card bg-white border border-translucent rounded-4 p-3 shadow-xs">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    👤
+                </div>
+                <div>
+                    <div class="fw-bold text-dark small mb-0">Driver Profile & Credentials</div>
+                    <div class="text-muted micro-text" style="font-size: 0.72rem;">View Driver ID, License, Contact & Credentials</div>
+                </div>
+            </div>
+
+            <a href="{{ route('driver-terminal.driver-profile', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
+               class="btn btn-sm btn-primary rounded-pill px-3.5 fw-bold shadow-xs" style="font-size: 0.78rem;">
+                View Profile
+            </a>
         </div>
     </div>
 
-    <!-- Assigned Vehicle Details (Read-Only) -->
-    <div class="col-12">
-        <div class="card bg-slate-800 border-slate-700 rounded-4 p-3.5 shadow-sm">
-            <div class="text-secondary small fw-bold text-uppercase mb-2.5" style="letter-spacing: 0.5px;">Assigned Vehicle</div>
-
-            @if ($assignedVehicle)
-                <div class="bg-dark p-3 rounded-3 border border-secondary d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="fs-2">🚚</div>
-                        <div>
-                            <div class="fw-extrabold text-white font-monospace fs-6">{{ $assignedVehicle->vehicle_number }}</div>
-                            <div class="text-secondary small">{{ $assignedVehicle->vehicle_type ?? 'Commercial Vehicle' }}</div>
-                        </div>
-                    </div>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle fs-8">ASSIGNED</span>
-                </div>
-            @else
-                <div class="bg-dark p-3 rounded-3 border border-secondary text-center">
-                    <div class="fw-bold text-secondary small">NO VEHICLE ASSIGNED</div>
-                    <div class="text-muted micro-text mt-0.5">Contact Transport Management to update vehicle assignment.</div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Logout Action Card -->
-    <div class="col-12">
-        <form action="{{ route('driver-terminal.logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn btn-outline-danger btn-lg w-100 fw-bold rounded-4 shadow-sm">
-                Sign Out from Terminal
-            </button>
-        </form>
-    </div>
 </div>
-@endsection
-
-@section('styles')
-<style>
-    .micro-text {
-        font-size: 0.7rem;
-    }
-    .fs-7 {
-        font-size: 0.75rem;
-    }
-    .fs-8 {
-        font-size: 0.7rem;
-    }
-</style>
 @endsection

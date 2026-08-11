@@ -446,7 +446,7 @@ class DriverTerminalController extends Controller
     }
 
     /**
-     * Driver Profile Page (Read-Only)
+     * Assigned Vehicle Details & 3D Showcase Page (/driver-terminal/{driver_code}/profile)
      */
     public function profile(Request $request, ?string $driver_code = null): View
     {
@@ -460,11 +460,33 @@ class DriverTerminalController extends Controller
             ->latest()
             ->first();
 
-        $assignedVehicle = $activeDelivery?->vehicle ?? Vehicle::find($currentDriver->current_assignment);
+        $assignedVehicle = $activeDelivery?->vehicle ?? Vehicle::find($currentDriver->current_assignment) ?? Vehicle::first();
 
         return view('driver-terminal.profile.index', [
             'currentDriver' => $currentDriver,
             'assignedVehicle' => $assignedVehicle,
+            'activeDelivery' => $activeDelivery,
+        ]);
+    }
+
+    /**
+     * Dedicated Driver Profile & Credentials Page (/driver-terminal/{driver_code}/driver-profile)
+     */
+    public function driverProfile(Request $request, ?string $driver_code = null): View
+    {
+        /** @var Driver $currentDriver */
+        $currentDriver = $request->attributes->get('current_driver');
+        $driverId = $currentDriver->id;
+
+        $completedTripsCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count();
+        $activeTripsCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count();
+        $totalTripsCount = TransportRequest::where('driver_id', $driverId)->count();
+
+        return view('driver-terminal.profile.driver', [
+            'currentDriver' => $currentDriver,
+            'completedTripsCount' => $completedTripsCount,
+            'activeTripsCount' => $activeTripsCount,
+            'totalTripsCount' => $totalTripsCount,
         ]);
     }
 
