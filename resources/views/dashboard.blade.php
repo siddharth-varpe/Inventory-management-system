@@ -1,49 +1,53 @@
 @extends('layouts.app')
 
-@section('title', 'StockManager Enterprise ERP')
+@section('title', 'Enterprise Operations Hub')
 
 @section('content')
-
-@php
-    $b = $actionBadges ?? [];
-@endphp
-
-<!-- Minimal Header -->
-<div class="card p-4 rounded-4 shadow-sm border-translucent mb-4 bg-body">
+<!-- Page Header Component -->
+<div class="mb-4">
     <div class="d-flex align-items-center justify-content-between">
         <div>
-            <h3 class="fw-bold text-body mb-1">StockManager Enterprise ERP</h3>
-            <div class="text-muted small font-monospace">{{ $company->name ?? 'Central Depot / Main Warehouse' }}</div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold text-uppercase micro-text">Unified Control Center</span>
+            <h2 class="h3 fw-extrabold text-body mb-0 mt-1">Enterprise Operations Hub</h2>
+            <p class="text-muted mb-0 small">Select an operational portal below to manage inventory, warehouse, logistics, and sales workflows.</p>
         </div>
-        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 small">
-            🟢 Online
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill fw-semibold shadow-none" data-bs-toggle="modal" data-bs-target="#systemGuideModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-book me-1" viewBox="0 0 16 16">
+                    <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.334-.896 3.896-1.058 1.405-.145 2.805.04 3.397.53.592-.49 1.992-.675 3.397-.53 1.562.162 3.014.658 3.896 1.058A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                </svg>
+                System Guide
+            </button>
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold font-monospace">
+                🟢 Production Mode
+            </span>
+        </div>
     </div>
 </div>
 
-<!-- Main Module Launcher Grid (Generous Whitespace) -->
-<div class="row g-4 mb-5">
+<!-- Responsive Portal Cards Grid -->
+<div class="row g-3">
 
-    <!-- Card 1: Manage Stock -->
-    <x-portal-card
-        title="Manage Stock"
-        badge="Inventory"
-        description="Register SKUs, receive supplier stock, perform stock adjustments and manage master inventory."
-        theme="emerald"
-        route="{{ route('stock.dashboard') }}"
-        actionCount="{{ $b['manage_stock'] ?? 0 }}"
-        icon='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1.5 1.5 0 0 1-.901 1.37l-7 2.8a1.5 1.5 0 0 1-1.198 0l-7-2.8A1.5 1.5 0 0 1 0 12.162V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>'
-    />
-
-    <!-- Card 2: Organize Stock -->
+    <!-- Card 1: Organize Stock -->
     <x-portal-card
         title="Organize Stock"
-        badge="Warehouse"
-        description="Manage warehouses, racks, storage locations, stock transfers and internal movements."
-        theme="sky"
+        badge="WAREHOUSE"
+        description="Warehouse bin locations, stock movements, rack assignments and physical storage organization."
+        theme="blue"
         route="{{ route('organize.dashboard') }}"
         actionCount="{{ $b['organize_stock'] ?? 0 }}"
-        icon='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-buildings" viewBox="0 0 16 16"><path d="M14.763.075A.5.5 0 0 0 14.44 0H1.56a.5.5 0 0 0-.492.421L.01 5.642a.5.5 0 0 0 .148.455l.5.5A.5.5 0 0 0 1 6.75V15a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6.75a.5.5 0 0 0 .342-.153l.5-.5a.5.5 0 0 0 .148-.455L14.763.075z"/></svg>'
+        icon='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-grid-3x3-gap-fill" viewBox="0 0 16 16"><path d="M1 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zM1 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1zM1 12a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z"/></svg>'
+    />
+
+    <!-- Card 2: Receive Goods -->
+    <x-portal-card
+        title="Receive Goods"
+        badge="Inbound"
+        description="Process inbound PO deliveries, supplier shipments, quality inspection and stock receiving."
+        theme="emerald"
+        :isComingSoon="true"
+        actionCount="{{ $b['receive_goods'] ?? 0 }}"
+        icon='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1h-2z"/><path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>'
     />
 
     <!-- Card 3: Send Goods -->
@@ -96,7 +100,7 @@
         badge="Mobile"
         description="Delivery checkpoints, trip execution, status updates, and completed delivery history."
         theme="cyan"
-        route="{{ route('driver-terminal.index') }}"
+        route="{{ route('driver-terminal.login') }}"
         actionCount="{{ $b['driver_terminal'] ?? 0 }}"
         icon='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-phone" viewBox="0 0 16 16"><path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/><path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>'
     />
@@ -180,55 +184,11 @@
                     </div>
                 </div>
 
-                <div class="alert alert-info border-0 rounded-3 mb-0">
-                    <strong class="fw-bold">Note:</strong> StockManager ERP operates as a modular commercial software package. Stations activate automatically as operational modules are deployed.
+                <div class="alert alert-info border-info-subtle bg-info-subtle text-info p-3 rounded-3 small mb-0">
+                    ℹ️ Select any portal card from the Unified Control Center to begin executing operations.
                 </div>
-            </div>
-            <div class="modal-footer border-top border-translucent p-3">
-                <button type="button" class="btn btn-secondary btn-sm rounded-3 fw-semibold" data-bs-dismiss="modal">Close Guide</button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Coming Soon Modal -->
-<div class="modal fade" id="comingSoonModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-translucent shadow-lg rounded-4 text-center p-4">
-            <div class="modal-body py-4">
-                <div class="p-4 bg-primary-subtle text-primary rounded-circle d-inline-flex mb-3 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-gear-wide-connected" viewBox="0 0 16 16">
-                        <path d="M7.068.727c.243-.2.561-.327.932-.327.37 0 .689.127.932.327L9.73 1.39c.277.228.618.375.986.425l.955.132c.31.043.593.18.802.39.209.208.347.491.39.801l.132.956c.05.367.197.708.425.985l.663.799c.2.243.327.561.327.931 0 .371-.127.69-.327.932l-.663.798c-.228.277-.375.618-.425.986l-.132.955c-.043.31-.18.593-.39.802a1.18 1.18 0 0 1-.801.39l-.956.132a2.47 2.47 0 0 0-.985.425l-.799.663c-.243.2-.561.327-.931.327-.371 0-.69-.127-.932-.327l-.798-.663a2.47 2.47 0 0 0-.986-.425l-.955-.132a1.18 1.18 0 0 1-.802-.39 1.18 1.18 0 0 1-.39-.801l-.132-.956a2.47 2.47 0 0 0-.425-.985l-.663-.799A1.18 1.18 0 0 1 .15 8c0-.37.127-.689.327-.932l.663-.798c.228-.277.375-.618.425-.986l.132-.955c.043-.31.18-.593.39-.802.209-.209.491-.347.801-.39l.956-.132c.367-.05.708-.197.985-.425l.799-.663zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>
-                    </svg>
-                </div>
-                <h4 class="fw-bold text-body mb-2" id="comingSoonModuleTitle">Operational Station</h4>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 mb-3">UPCOMING MODULE</span>
-                <p class="text-muted small mb-0 px-3">
-                    This station is currently reserved for upcoming business operations. Master Data setup for this module will connect seamlessly upon deployment.
-                </p>
-            </div>
-            <div class="d-flex justify-content-center">
-                <button type="button" class="btn btn-primary btn-sm rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">Return to Dashboard</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var comingSoonModal = document.getElementById('comingSoonModal');
-    if (comingSoonModal) {
-        comingSoonModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var moduleTitle = button.getAttribute('data-module-title') || 'Operational Station';
-            var titleElement = document.getElementById('comingSoonModuleTitle');
-            if (titleElement) {
-                titleElement.textContent = moduleTitle;
-            }
-        });
-    }
-});
-</script>
-@endpush
 @endsection
