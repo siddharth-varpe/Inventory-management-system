@@ -52,7 +52,7 @@
                                 </span>
                             </td>
                             <td class="fw-bold font-monospace text-body">
-                                <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $req->id }})" class="text-decoration-none text-body">
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalDeliveryOrderProfile" onclick="openDeliveryOrderProfile({{ $req->id }}, this)" class="text-decoration-none text-body">
                                     {{ $req->order_reference }}
                                 </a>
                             </td>
@@ -78,7 +78,7 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="openDeliveryOrderProfile({{ $req->id }})">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalDeliveryOrderProfile" onclick="openDeliveryOrderProfile({{ $req->id }}, this)">
                                     View Record &rarr;
                                 </button>
                             </td>

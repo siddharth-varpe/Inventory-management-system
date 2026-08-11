@@ -65,7 +65,7 @@
                                 </span>
                             </td>
                             <td class="fw-bold font-monospace text-body">
-                                <a href="javascript:void(0)" onclick="openDeliveryOrderProfile({{ $req->id }})" class="text-decoration-none text-body">
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalDeliveryOrderProfile" onclick="openDeliveryOrderProfile({{ $req->id }}, this)" class="text-decoration-none text-body">
                                     {{ $req->order_reference }}
                                 </a>
                             </td>
@@ -107,7 +107,7 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-bold" onclick="openDeliveryOrderProfile({{ $req->id }}, this)">
+                                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalDeliveryOrderProfile" onclick="openDeliveryOrderProfile({{ $req->id }}, this)">
                                         View Profile
                                     </button>
                                     <button type="button" class="btn btn-outline-danger rounded-pill px-2" title="Cancel Dispatch" onclick="openCancelDispatchModal({{ $req->id }}, '{{ $req->order_reference }}', '{{ $req->dispatch_number }}')">

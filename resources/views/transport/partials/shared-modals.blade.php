@@ -187,46 +187,79 @@
     </div>
 </div>
 
-<!-- CANCEL DISPATCH MODAL (#modalCancelDispatch) -->
-<div class="modal fade" id="modalCancelDispatch" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 shadow-lg border-translucent bg-body">
-            <div class="modal-header border-bottom border-translucent p-3 bg-danger-subtle text-danger rounded-top-4">
-                <h5 class="modal-title fw-black mb-0">🚫 Cancel Active Dispatch</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <p class="text-body mb-3">You are about to cancel active dispatch for shipment <strong id="cancelDispatchOrderRef" class="text-primary font-monospace">SO-000000</strong> (<span id="cancelDispatchNo" class="font-monospace">DSP-000000</span>).</p>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-body">Cancellation Reason <span class="text-danger">*</span></label>
-                    <textarea class="form-control form-control-sm bg-body border-translucent" id="cancelDispatchReason" rows="3" placeholder="Enter reason for dispatch cancellation (e.g., breakdown, accident, route closure, customer recall)..." required></textarea>
-                    <div class="form-text small text-muted">Minimum 3 characters required for audit trail.</div>
-                </div>
-                <div class="alert alert-warning small mb-0">
-                    ⚠️ <strong>Audit Warning:</strong> This action will mark order status as CANCELLED, release driver & vehicle to fleet (if no other active trips), and record an immutable audit log.
-                </div>
-            </div>
-            <div class="modal-footer border-top border-translucent p-3">
-                <button type="button" class="btn btn-secondary rounded-3 px-4 fw-bold" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger rounded-3 px-4 fw-bold shadow-sm" id="btnConfirmCancelDispatch" onclick="executeCancelDispatch()">
-                    Confirm Cancellation
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 let currentOrderData = null;
-let cancelTargetTaskId = null;
 
 function refreshDeliveryOrders() {
     window.location.reload();
 }
 
+function showModalSafely(modalEl) {
+    if (!modalEl) return;
+    
+    try {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            let bsModal = window.bootstrap.Modal.getInstance(modalEl);
+            if (!bsModal) {
+                bsModal = new window.bootstrap.Modal(modalEl);
+            }
+            bsModal.show();
+            return;
+        }
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            let bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (!bsModal) {
+                bsModal = new bootstrap.Modal(modalEl);
+            }
+            bsModal.show();
+            return;
+        }
+    } catch (e) {
+        console.warn('Bootstrap JS instance error, applying fallback modal display:', e);
+    }
+
+    if (window.jQuery && typeof window.jQuery(modalEl).modal === 'function') {
+        window.jQuery(modalEl).modal('show');
+        return;
+    }
+
+    // Direct DOM Fallback with Backdrop
+    modalEl.classList.add('show');
+    modalEl.style.display = 'block';
+    modalEl.removeAttribute('aria-hidden');
+    modalEl.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+
+    let backdrop = document.getElementById('custom-modal-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'custom-modal-backdrop';
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+    }
+
+    // Setup close listeners for fallback
+    const closeBtns = modalEl.querySelectorAll('[data-bs-dismiss="modal"]');
+    closeBtns.forEach(btn => {
+        btn.onclick = function() {
+            modalEl.classList.remove('show');
+            modalEl.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            if (backdrop) backdrop.remove();
+        };
+    });
+}
+
 function openDeliveryOrderProfile(id, btnElement) {
     if (!id) {
         alert('Invalid delivery selection.');
+        return;
+    }
+
+    const modalEl = document.getElementById('modalDeliveryOrderProfile');
+    if (!modalEl) {
+        console.error('Modal element #modalDeliveryOrderProfile not found in DOM.');
+        alert('Error: Profile modal not found on page.');
         return;
     }
 
@@ -240,27 +273,9 @@ function openDeliveryOrderProfile(id, btnElement) {
     document.getElementById('profRequestNumber').textContent = `TRN-#${id}`;
 
     // INSTANTLY SHOW BOOTSTRAP MODAL ON CLICK
-    const modalEl = document.getElementById('modalDeliveryOrderProfile');
-    if (modalEl) {
-        let bsModal = null;
-        if (window.bootstrap && window.bootstrap.Modal) {
-            bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        }
-        
-        if (bsModal) {
-            bsModal.show();
-        } else if (window.jQuery) {
-            window.jQuery(modalEl).modal('show');
-        } else {
-            modalEl.classList.add('show');
-            modalEl.style.display = 'block';
-            document.body.classList.add('modal-open');
-        }
-    }
+    showModalSafely(modalEl);
 
-    // FETCH DELIVER ORDER DATA IN BACKGROUND
+    // FETCH DELIVERY ORDER DATA IN BACKGROUND
     fetch(`/transport/delivery-orders/${id}`, {
         headers: { 'Accept': 'application/json' }
     })
@@ -554,76 +569,6 @@ function submitAssignmentForm(event) {
         alert('Assignment failed. Please check inputs and try again.');
         submitBtn.disabled = false;
         submitBtn.textContent = isReassign ? 'Confirm Reassignment' : 'Confirm Assignment';
-    });
-}
-
-function openCancelDispatchModal(taskId, orderRef, dispatchNo) {
-    cancelTargetTaskId = taskId;
-    document.getElementById('cancelDispatchOrderRef').textContent = orderRef || 'N/A';
-    document.getElementById('cancelDispatchNo').textContent = dispatchNo || 'DSP-ACTIVE';
-    document.getElementById('cancelDispatchReason').value = '';
-
-    const modalEl = document.getElementById('modalCancelDispatch');
-    if (modalEl) {
-        let bsModal = null;
-        if (window.bootstrap && window.bootstrap.Modal) {
-            bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        }
-
-        if (bsModal) {
-            bsModal.show();
-        } else if (window.jQuery) {
-            window.jQuery(modalEl).modal('show');
-        } else {
-            modalEl.classList.add('show');
-            modalEl.style.display = 'block';
-            document.body.classList.add('modal-open');
-        }
-    }
-}
-
-function executeCancelDispatch() {
-    if (!cancelTargetTaskId) return;
-
-    const reason = document.getElementById('cancelDispatchReason').value.trim();
-    if (!reason || reason.length < 3) {
-        alert('Please enter a valid cancellation reason (minimum 3 characters).');
-        return;
-    }
-
-    const confirmBtn = document.getElementById('btnConfirmCancelDispatch');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Cancelling Dispatch...';
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-    fetch(`/transport/delivery-orders/${cancelTargetTaskId}/cancel-dispatch`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ cancellation_reason: reason }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            window.location.reload();
-        } else {
-            alert('Cancellation Failed: ' + (data.message || 'Validation error'));
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = 'Confirm Cancellation';
-        }
-    })
-    .catch(error => {
-        console.error('Error cancelling dispatch:', error);
-        alert('Cancellation failed. Please check network/inputs and try again.');
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm Cancellation';
     });
 }
 </script>
