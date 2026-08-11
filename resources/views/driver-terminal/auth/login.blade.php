@@ -159,6 +159,45 @@
         box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
     }
 
+    /* +91 Fixed Addon Input Group */
+    .dt-input-group {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .dt-input-prefix {
+        height: 52px;
+        padding: 0 14px;
+        background-color: #f1f5f9;
+        border: 1.5px solid #cbd5e1;
+        border-right: none;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        pointer-events: none;
+        flex-shrink: 0;
+    }
+
+    .dt-input-with-prefix {
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+        flex-grow: 1;
+    }
+
+    .dt-input-group:focus-within .dt-input-prefix {
+        border-color: #0284c7;
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
     .dt-input-mono {
         font-family: 'JetBrains Mono', monospace;
     }
@@ -266,6 +305,15 @@
         margin-top: 1px;
     }
 
+    /* Footer */
+    .dt-footer-note {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 20px;
+        font-weight: 500;
+    }
+
     /* Spinner */
     .dt-spinner {
         width: 18px;
@@ -298,8 +346,8 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="dt-brand-title">DRIVER TERMINAL</div>
-                    <div class="dt-brand-subtext">Fleet Delivery & Execution</div>
+                    <div class="dt-brand-title">STOCKMANAGER</div>
+                    <div class="dt-brand-subtext">DRIVER TERMINAL</div>
                 </div>
             </div>
             <div class="dt-status-pill">
@@ -355,7 +403,7 @@
                             name="driver_id"
                             id="driver_id"
                             class="dt-input dt-input-mono dt-input-uppercase"
-                            placeholder="Enter your Driver ID"
+                            placeholder="DRV-000001"
                             value="{{ old('driver_id') }}"
                             required
                             autofocus
@@ -363,24 +411,27 @@
                             spellcheck="false"
                         >
                     </div>
-                    <div class="dt-field-hint">Example: DRV-000001</div>
+                    <div class="dt-field-hint">Enter the Driver ID provided by your Transport Manager.</div>
                 </div>
 
-                <!-- FIELD 2: REGISTERED MOBILE NUMBER -->
+                <!-- FIELD 2: REGISTERED MOBILE NUMBER (+91 FIXED PREFIX) -->
                 <div class="dt-form-group">
                     <label for="mobile_number" class="dt-label">REGISTERED MOBILE NUMBER</label>
-                    <div class="dt-input-wrapper">
+                    <div class="dt-input-group">
+                        <span class="dt-input-prefix" aria-label="Country code">+91</span>
                         <input
                             type="tel"
                             inputmode="numeric"
-                            pattern="[0-9]*"
+                            pattern="[0-9]{10}"
+                            maxlength="10"
                             name="mobile_number"
                             id="mobile_number"
-                            class="dt-input dt-input-mono"
-                            placeholder="Enter registered mobile number"
+                            class="dt-input dt-input-mono dt-input-with-prefix"
+                            placeholder="9876543210"
                             value="{{ old('mobile_number') }}"
                             required
                             autocomplete="tel"
+                            spellcheck="false"
                         >
                     </div>
                 </div>
@@ -393,7 +444,7 @@
                         <line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                     <p class="dt-info-text">
-                        Use the Driver ID and mobile number registered by your Transport Manager.
+                        Use the mobile number registered with the Transport Department.
                     </p>
                 </div>
 
@@ -402,6 +453,10 @@
                     <span id="btnText">LOGIN</span>
                 </button>
             </form>
+        </div>
+
+        <div class="dt-footer-note">
+            Secure Driver Terminal — StockManager ERP
         </div>
 
     </div>
@@ -426,16 +481,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Format Mobile Input: Digits only
+    // 2. Format Mobile Input: Digits only, max 10 digits
     if (mobileInput) {
         mobileInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            let digits = e.target.value.replace(/[^0-9]/g, '');
+            if (digits.length > 10) {
+                digits = digits.slice(0, 10);
+            }
+            e.target.value = digits;
         });
     }
 
     // 3. Prevent duplicate submissions and show loading state
     if (loginForm && submitBtn) {
         loginForm.addEventListener('submit', (e) => {
+            if (mobileInput && mobileInput.value.length !== 10) {
+                e.preventDefault();
+                alert('Please enter your 10-digit mobile number.');
+                mobileInput.focus();
+                return false;
+            }
+
             if (loginForm.checkValidity()) {
                 submitBtn.disabled = true;
                 btnText.innerHTML = '<span class="dt-spinner"></span> Signing in...';
