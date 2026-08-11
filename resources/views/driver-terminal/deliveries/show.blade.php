@@ -18,11 +18,11 @@
 @section('title', 'Trip Details ' . $orderCode . ' — Driver Terminal')
 
 @section('content')
-<div class="vstack gap-3.5">
+<div class="vstack gap-4">
     <!-- Top Back Header Bar -->
     <div class="d-flex align-items-center justify-content-between">
         <a href="{{ route('driver-terminal.deliveries.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
-           class="btn btn-sm bg-white border border-translucent rounded-pill px-3 py-1.5 fw-bold text-dark shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+           class="btn btn-sm bg-white border border-translucent rounded-pill px-3.5 py-2 fw-bold text-dark shadow-xs d-inline-flex align-items-center gap-1" style="font-size: 0.82rem; min-height: 44px;">
             <span>&lsaquo;</span>
             <span>Back to Trips</span>
         </a>
@@ -46,7 +46,7 @@
 
     <!-- Main Delivery Information Card -->
     <div class="card bg-white border border-translucent rounded-4 shadow-sm">
-        <div class="card-body p-3.5">
+        <div class="card-body p-4">
             <div class="d-flex align-items-center justify-content-between border-bottom border-translucent pb-3 mb-3">
                 <div>
                     <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.7rem;">Trip Reference</span>

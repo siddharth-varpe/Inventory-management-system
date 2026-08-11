@@ -7,7 +7,7 @@
 
     <!-- 1. DRIVER STATUS CARD -->
     <div class="card border-0 rounded-4 shadow-sm" style="background-color: #ecfdf5; border: 1px solid #a7f3d0 !important;">
-        <div class="card-body p-3.5 d-flex align-items-center justify-content-between">
+        <div class="card-body p-4 d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" 
                      style="width: 48px; height: 48px; background-color: #d1fae5; color: #059669;">
@@ -28,7 +28,7 @@
                 </div>
             </div>
 
-            <button type="button" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border border-success-subtle shadow-xs d-flex align-items-center gap-1.5"
+            <button type="button" class="btn btn-sm bg-white rounded-pill px-3.5 py-2 border border-success-subtle shadow-xs d-flex align-items-center gap-1.5"
                     style="color: #047857; font-weight: 700; font-size: 0.78rem;"
                     onclick="alert('Status Indicator: You are active on duty under Driver Master profile {{ $currentDriver->driver_code ?? '' }}.')">
                 <span>Change Status</span>
@@ -39,8 +39,8 @@
 
     <!-- 2. TODAY'S OVERVIEW CARD -->
     <div class="card bg-white border border-translucent rounded-4 shadow-sm">
-        <div class="card-body p-3.5">
-            <h6 class="fw-extrabold text-dark mb-3 fs-6">Today's Overview</h6>
+        <div class="card-body p-4">
+            <h6 class="fw-extrabold text-dark mb-3.5 fs-6">Today's Overview</h6>
 
             <div class="row row-cols-2 row-cols-sm-4 g-3 text-center">
                 <!-- Metric 1: Deliveries Today -->

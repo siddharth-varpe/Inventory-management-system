@@ -64,7 +64,8 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--dt-border-subtle);
-            padding: 12px 16px;
+            padding: 14px 20px;
+            margin-bottom: 4px;
         }
 
         .dt-header-btn {
@@ -89,8 +90,9 @@
         /* Main Content Padding to account for bottom nav */
         .dt-content {
             flex: 1;
-            padding: 20px 16px;
-            padding-bottom: 110px;
+            padding: 24px 20px;
+            padding-bottom: 120px;
+            line-height: 1.6;
         }
 
         /* Fixed Bottom Navigation */
