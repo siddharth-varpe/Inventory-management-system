@@ -235,29 +235,42 @@ class DriverTerminalController extends Controller
         $driverId = $currentDriver->id;
 
         $search = trim((string) $request->query('search', ''));
-        $activeTab = strtolower(trim((string) $request->query('tab', $request->query('status', 'all'))));
+        $rawTab = strtolower(trim((string) $request->query('tab', $request->query('status', 'all'))));
 
-        if (!in_array($activeTab, ['all', 'ongoing', 'completed', 'upcoming'])) {
-            $activeTab = 'all';
-        }
+        $activeTab = match ($rawTab) {
+            'in_progress', 'ongoing' => 'in_progress',
+            'completed' => 'completed',
+            'pending', 'upcoming' => 'pending',
+            'failed', 'cancelled' => 'failed',
+            default => 'all',
+        };
 
-        // Summary Metric Counts
+        // Summary Metric Counts (Driver-Scoped)
         $totalCount = TransportRequest::where('driver_id', $driverId)->count();
-        $ongoingCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count();
         $completedCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count();
-        $upcomingCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned'])->count();
+        $inProgressCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count();
+        $pendingCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'pending'])->count();
+        $failedCount = TransportRequest::where('driver_id', $driverId)->whereIn('status', ['failed', 'cancelled', 'rejected'])->count();
+
+        // Percentages
+        $completedPercent = $totalCount > 0 ? (int) round(($completedCount / $totalCount) * 100) : 0;
+        $inProgressPercent = $totalCount > 0 ? (int) round(($inProgressCount / $totalCount) * 100) : 0;
+        $pendingPercent = $totalCount > 0 ? (int) round(($pendingCount / $totalCount) * 100) : 0;
+        $failedPercent = $totalCount > 0 ? (int) round(($failedCount / $totalCount) * 100) : 0;
 
         // Main Query
         $query = TransportRequest::with(['salesOrder.customer', 'vehicle', 'driver'])
             ->where('driver_id', $driverId);
 
         // Filter by Status Tab
-        if ($activeTab === 'ongoing') {
+        if ($activeTab === 'in_progress') {
             $query->whereIn('status', ['dispatched', 'in_transit', 'arrived']);
         } elseif ($activeTab === 'completed') {
             $query->whereIn('status', ['delivered', 'completed']);
-        } elseif ($activeTab === 'upcoming') {
-            $query->whereIn('status', ['driver_vehicle_assigned', 'assigned']);
+        } elseif ($activeTab === 'pending') {
+            $query->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'pending']);
+        } elseif ($activeTab === 'failed') {
+            $query->whereIn('status', ['failed', 'cancelled', 'rejected']);
         }
 
         // Filter by Search Term
@@ -285,9 +298,18 @@ class DriverTerminalController extends Controller
             'search' => $search,
             'activeTab' => $activeTab,
             'totalCount' => $totalCount,
-            'ongoingCount' => $ongoingCount,
             'completedCount' => $completedCount,
-            'upcomingCount' => $upcomingCount,
+            'completedPercent' => $completedPercent,
+            'inProgressCount' => $inProgressCount,
+            'inProgressPercent' => $inProgressPercent,
+            'pendingCount' => $pendingCount,
+            'pendingPercent' => $pendingPercent,
+            'failedCount' => $failedCount,
+            'failedPercent' => $failedPercent,
+
+            // Compatibility aliases
+            'ongoingCount' => $inProgressCount,
+            'upcomingCount' => $pendingCount,
         ]);
     }
 
