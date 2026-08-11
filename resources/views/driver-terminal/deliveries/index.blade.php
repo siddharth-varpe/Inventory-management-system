@@ -3,7 +3,7 @@
 @section('title', 'Deliveries — Driver Terminal')
 
 @section('content')
-<div class="vstack gap-3.5">
+<div class="vstack gap-4">
 
     <!-- 1. PAGE HEADER -->
     <div class="d-flex align-items-center justify-content-between">

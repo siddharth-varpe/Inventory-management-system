@@ -3,7 +3,7 @@
 @section('title', 'Driver Workspace — Home')
 
 @section('content')
-<div class="vstack gap-3.5">
+<div class="vstack gap-4">
 
     <!-- 1. DRIVER STATUS CARD -->
     <div class="card border-0 rounded-4 shadow-sm" style="background-color: #ecfdf5; border: 1px solid #a7f3d0 !important;">

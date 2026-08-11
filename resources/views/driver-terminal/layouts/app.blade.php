@@ -68,8 +68,8 @@
         }
 
         .dt-header-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -89,8 +89,8 @@
         /* Main Content Padding to account for bottom nav */
         .dt-content {
             flex: 1;
-            padding: 16px;
-            padding-bottom: 90px;
+            padding: 20px 16px;
+            padding-bottom: 110px;
         }
 
         /* Fixed Bottom Navigation */
