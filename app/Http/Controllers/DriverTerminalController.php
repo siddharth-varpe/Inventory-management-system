@@ -8,6 +8,7 @@ use App\Models\TransportTrip;
 use App\Models\TransportRequest;
 use App\Models\Driver;
 use App\Models\Vehicle;
+use App\Models\DriverVehicleAssignment;
 use App\Models\User;
 use App\Domain\Transport\DriverExecutionEngine;
 use Illuminate\Http\JsonResponse;
@@ -443,6 +444,45 @@ class DriverTerminalController extends Controller
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Core 4: Vehicle & Status Screen (/driver-terminal/{driver_code}/vehicle)
+     */
+    public function vehicleStatus(Request $request, ?string $driver_code = null): View
+    {
+        /** @var Driver $currentDriver */
+        $currentDriver = $request->attributes->get('current_driver');
+        $driverId = $currentDriver->id;
+
+        // Resolve Driver's Authorized Vehicle
+        $activeDelivery = TransportRequest::with('vehicle')
+            ->where('driver_id', $driverId)
+            ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
+            ->latest()
+            ->first();
+
+        $activeAssignment = DriverVehicleAssignment::with('vehicle')
+            ->where('driver_id', $driverId)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        $assignedVehicle = $activeDelivery?->vehicle 
+            ?? $activeAssignment?->vehicle 
+            ?? Vehicle::find($currentDriver->current_assignment);
+
+        $serviceRemainingDays = null;
+        if ($assignedVehicle && $assignedVehicle->next_service_due_date) {
+            $serviceRemainingDays = (int) now()->diffInDays($assignedVehicle->next_service_due_date, false);
+        }
+
+        return view('driver-terminal.vehicle.index', [
+            'currentDriver' => $currentDriver,
+            'assignedVehicle' => $assignedVehicle,
+            'activeDelivery' => $activeDelivery,
+            'serviceRemainingDays' => $serviceRemainingDays,
+        ]);
     }
 
     /**

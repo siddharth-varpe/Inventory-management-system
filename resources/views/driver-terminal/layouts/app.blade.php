@@ -293,9 +293,9 @@
             <div class="offcanvas-body p-3">
                 <div class="vstack gap-1">
                     @if($driverCode)
-                    <a href="{{ route('driver-terminal.profile', ['driver_code' => $driverCode]) }}" class="dt-menu-link">
+                    <a href="{{ route('driver-terminal.vehicle.status', ['driver_code' => $driverCode]) }}" class="dt-menu-link">
                         <span>🚗</span>
-                        <span>Vehicle Information & 3D Showcase</span>
+                        <span>Vehicle & Status</span>
                     </a>
 
                     <a href="{{ route('driver-terminal.driver-profile', ['driver_code' => $driverCode]) }}" class="dt-menu-link">
