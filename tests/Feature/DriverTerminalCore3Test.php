@@ -115,7 +115,7 @@ class DriverTerminalCore3Test extends TestCase
         $response->assertSee('DEL-170526-001');
         $response->assertSee('Galaxy Electronics');
         $response->assertSee('truck-3d.png');
-        $response->assertSee("Today's Delivery Summary");
+        $response->assertSee("Today's Delivery Summary", false);
     }
 
     public function test_core3_filtering_by_status_pills(): void

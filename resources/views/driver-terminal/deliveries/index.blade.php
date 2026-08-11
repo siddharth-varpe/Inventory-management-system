@@ -9,7 +9,7 @@
     <div class="d-flex align-items-center justify-content-between">
         <div>
             <h5 class="fw-black text-dark mb-0 fs-5">Deliveries</h5>
-            <p class="text-muted small mb-0" style="font-size: 0.78rem;">Manage all deliveries and track progress.</p>
+            <p class="text-muted small mb-0" style="font-size: 0.78rem;">My Deliveries &bull; Manage all deliveries and track progress.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <button type="button" class="btn btn-sm bg-white border border-translucent rounded-circle shadow-xs p-2" 
@@ -141,7 +141,7 @@
                 $iconBg = $isCompleted ? 'background-color: #f3e8ff; color: #9333ea;' : ($isInProgress ? 'background-color: #fff7ed; color: #ea580c;' : ($isFailed ? 'background-color: #fef2f2; color: #ef4444;' : 'background-color: #eff6ff; color: #2563eb;'));
                 
                 $badgeBg = $isCompleted ? 'bg-success-subtle text-success border-success-subtle' : ($isInProgress ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : ($isFailed ? 'bg-danger-subtle text-danger border-danger-subtle' : 'bg-primary-subtle text-primary border-primary-subtle'));
-                $badgeText = $isCompleted ? '✓ Completed' : ($isInProgress ? '↻ In Progress' : ($isFailed ? '✖ Failed' : '🕒 Pending'));
+                $badgeText = $isCompleted ? '✓ Completed' : ($isInProgress ? '↻ In Progress (Ongoing)' : ($isFailed ? '✖ Failed' : '🕒 Pending (ASSIGNED)'));
 
                 $orderRef = $d->order_reference ?? $d->request_number ?? ('DEL-' . $d->id);
                 $customerName = $d->customer_name ?? $d->salesOrder?->customer?->company_name ?? 'Primary Customer';
