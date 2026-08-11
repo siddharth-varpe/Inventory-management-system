@@ -37,6 +37,10 @@ class DriverTerminalController extends Controller
         $dispatchedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['dispatched', 'in_transit', 'arrived'])->count() : 0;
         $completedCount = $driverId ? TransportRequest::where('driver_id', $driverId)->whereIn('status', ['delivered', 'completed'])->count() : 0;
 
+        $deliveriesTodayCount = $assignedCount + $dispatchedCount + $completedCount;
+        $pendingDeliveriesCount = $assignedCount + $dispatchedCount;
+        $completedTodayCount = $completedCount;
+
         $activeDelivery = $driverId ? TransportRequest::with(['salesOrder.customer', 'vehicle'])
             ->where('driver_id', $driverId)
             ->whereIn('status', ['driver_vehicle_assigned', 'assigned', 'dispatched', 'in_transit', 'arrived'])
@@ -45,13 +49,38 @@ class DriverTerminalController extends Controller
 
         $assignedVehicle = $activeDelivery?->vehicle ?? ($driverId ? Vehicle::find($currentDriver?->current_assignment) : null);
 
+        $todayRequests = $driverId ? TransportRequest::with(['salesOrder.customer', 'vehicle'])
+            ->where('driver_id', $driverId)
+            ->latest()
+            ->limit(10)
+            ->get() : collect();
+
+        $hour = (int) now()->format('H');
+        if ($hour >= 5 && $hour < 12) {
+            $greetingPrefix = 'Good Morning';
+        } elseif ($hour >= 12 && $hour < 17) {
+            $greetingPrefix = 'Good Afternoon';
+        } else {
+            $greetingPrefix = 'Good Evening';
+        }
+
+        $driverFirstName = $currentDriver ? explode(' ', trim($currentDriver->driver_name))[0] : 'Driver';
+
         return view('driver-terminal.home.index', [
             'currentDriver' => $currentDriver,
+            'driverFirstName' => $driverFirstName,
+            'greetingPrefix' => $greetingPrefix,
             'assignedCount' => $assignedCount,
             'dispatchedCount' => $dispatchedCount,
             'completedCount' => $completedCount,
+            'deliveriesTodayCount' => $deliveriesTodayCount,
+            'pendingDeliveriesCount' => $pendingDeliveriesCount,
+            'completedTodayCount' => $completedTodayCount,
+            'totalDistanceKm' => 0,
             'activeDelivery' => $activeDelivery,
             'assignedVehicle' => $assignedVehicle,
+            'todayRequests' => $todayRequests,
+            'unreadNotificationsCount' => 0,
         ]);
     }
 
