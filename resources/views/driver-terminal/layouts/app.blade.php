@@ -32,6 +32,28 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* Human-engineered Micro-interactions & Tactile Feedback */
+        .card, .dt-card {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+        }
+
+        .dt-touch-active:active, .btn:active, .nav-link:active {
+            transform: scale(0.972);
+        }
+
+        .chevron-icon {
+            display: inline-block;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        [aria-expanded="true"] .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .dt-shadow-human {
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02) !important;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #cbd5e1;

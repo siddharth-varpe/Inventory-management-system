@@ -426,7 +426,7 @@
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-light text-dark font-monospace border" style="font-size: 0.7rem;">Verified Master</span>
-                <span class="text-secondary fw-bold fs-6">▾</span>
+                <span class="text-secondary fw-bold fs-6 chevron-icon">▾</span>
             </div>
         </button>
 
@@ -553,6 +553,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const dirLight2 = new THREE.DirectionalLight(0x3b82f6, 0.4);
     dirLight2.position.set(-6, 4, -6);
     scene.add(dirLight2);
+
+    // 2b. Add Ground Shadow Disc (Handcrafted Human Touch)
+    const shadowGeo = new THREE.PlaneGeometry(6.0, 3.5);
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 128; shadowCanvas.height = 128;
+    const sCtx = shadowCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(15, 23, 42, 0.35)');
+    grad.addColorStop(0.5, 'rgba(15, 23, 42, 0.15)');
+    grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+    sCtx.fillStyle = grad; sCtx.fillRect(0, 0, 128, 128);
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+    const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.set(0, 0.01, 0);
+    scene.add(shadowMesh);
 
     // 3. Construct 3D Commercial Delivery Truck Model
     const truckGroup = new THREE.Group();
@@ -689,12 +706,15 @@ document.addEventListener('DOMContentLoaded', function () {
         isDragging = false;
     });
 
-    // 5. Render Loop with Autorotation
+    // 5. Render Loop with Autorotation & Idle Engine Vibration Physics
+    let animTime = 0;
     function animate() {
         requestAnimationFrame(animate);
+        animTime += 0.03;
         if (!isDragging) {
-            truckGroup.rotation.y += 0.006;
+            truckGroup.rotation.y += 0.005;
         }
+        truckGroup.position.y = Math.sin(animTime * 2.2) * 0.02; // Realistic truck engine idle vibration
         renderer.render(scene, camera);
     }
     animate();
