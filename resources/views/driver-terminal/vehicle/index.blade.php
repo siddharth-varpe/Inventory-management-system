@@ -48,11 +48,47 @@
         </div>
 
         @if($assignedVehicle)
-            <!-- THREE.JS 3D WEBGL TRUCK CONTAINER -->
-            <div id="truck3d-container" class="mb-4" style="width: 100%; height: 210px; position: relative; background: radial-gradient(circle, #f8fafc 0%, #edf2f7 100%); border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+            <!-- PRODUCTION-GRADE 3D WEBGL VEHICLE VIEWER CONTAINER -->
+            <div id="truck3d-container" class="mb-4 position-relative rounded-4 overflow-hidden border border-translucent shadow-sm" 
+                 style="width: 100%; height: 235px; background: radial-gradient(circle at center, #f8fafc 0%, #edf2f7 100%);">
+                
+                <!-- 3D Canvas -->
                 <canvas id="truck3d-canvas" style="width: 100%; height: 100%; display: block; cursor: grab;"></canvas>
-                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2 badge bg-dark-subtle text-dark-emphasis font-monospace micro-text px-2.5 py-1 rounded-pill opacity-75" style="font-size: 0.68rem; pointer-events: none;">
-                    🔄 Drag to rotate 3D Truck Model
+
+                <!-- Loading State Skeleton Overlay -->
+                <div class="vehicle-3d-loader position-absolute top-0 start-0 w-100 h-100 bg-white d-flex align-items-center justify-content-center" 
+                     style="transition: opacity 0.3s ease; z-index: 5;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary spinner-border-sm mb-2" role="status"></div>
+                        <div class="fw-bold micro-text text-dark">Loading 3D Fleet Vehicle...</div>
+                        <div class="text-muted micro-text" style="font-size: 0.68rem;">{{ $assignedVehicle->manufacturer ?? 'Tata' }} {{ $assignedVehicle->model ?? 'Prima' }}</div>
+                    </div>
+                </div>
+
+                <!-- Onboarding Temporary Interaction Guidance -->
+                <div class="vehicle-3d-hint position-absolute bottom-0 start-50 translate-middle-x mb-2 badge bg-dark-subtle text-dark-emphasis font-monospace micro-text px-3 py-1 rounded-pill opacity-75 shadow-xs" 
+                     style="font-size: 0.68rem; pointer-events: none; z-index: 2;">
+                    🔄 Touch &amp; Drag to Rotate &bull; Double-Tap to Reset
+                </div>
+
+                <!-- Perspective Preset Camera Toolbar -->
+                <div class="position-absolute top-0 end-0 m-2.5 d-flex gap-1.5" style="z-index: 3;">
+                    <button type="button" class="btn btn-sm btn-white bg-white border shadow-xs rounded-pill px-2.5 py-1 micro-text fw-bold text-secondary dt-touch-active" 
+                            data-3d-action="reset" title="Reset View">
+                        📷 Reset
+                    </button>
+                    <button type="button" class="btn btn-sm btn-white bg-white border shadow-xs rounded-pill px-2.5 py-1 micro-text fw-bold text-secondary dt-touch-active" 
+                            data-3d-action="front" title="Front Perspective">
+                        📐 Front
+                    </button>
+                    <button type="button" class="btn btn-sm btn-white bg-white border shadow-xs rounded-pill px-2.5 py-1 micro-text fw-bold text-secondary dt-touch-active" 
+                            data-3d-action="side" title="Side Perspective">
+                        📐 Side
+                    </button>
+                    <button type="button" class="btn btn-sm btn-white bg-white border shadow-xs rounded-pill px-2.5 py-1 micro-text fw-bold text-secondary dt-touch-active" 
+                            data-3d-action="rear" title="Rear Perspective">
+                        📐 Rear
+                    </button>
                 </div>
             </div>
 
@@ -519,213 +555,33 @@
 @endsection
 
 @section('scripts')
-<!-- THREE.JS 3D WEBGL ENGINE -->
+<!-- THREE.JS 3D WEBGL ENGINE, ORBITCONTROLS & GLTFLOADER -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="{{ asset('js/driver-terminal/vehicle-3d-viewer.js') }}"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const container = document.getElementById('truck3d-container');
-    const canvas = document.getElementById('truck3d-canvas');
+    if (typeof Vehicle3DViewer === 'undefined') return;
 
-    if (!container || !canvas || typeof THREE === 'undefined') return;
-
-    // 1. Scene, Camera, Renderer Setup
-    const scene = new THREE.Scene();
-
-    const width = container.clientWidth || 340;
-    const height = container.clientHeight || 210;
-
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(5.5, 3.2, 6.5);
-    camera.lookAt(0, 0.4, 0);
-
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    // 2. Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-    scene.add(ambientLight);
-
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
-    dirLight1.position.set(8, 12, 8);
-    scene.add(dirLight1);
-
-    const dirLight2 = new THREE.DirectionalLight(0x3b82f6, 0.4);
-    dirLight2.position.set(-6, 4, -6);
-    scene.add(dirLight2);
-
-    // 2b. Add Ground Shadow Disc (Handcrafted Human Touch)
-    const shadowGeo = new THREE.PlaneGeometry(6.0, 3.5);
-    const shadowCanvas = document.createElement('canvas');
-    shadowCanvas.width = 128; shadowCanvas.height = 128;
-    const sCtx = shadowCanvas.getContext('2d');
-    const grad = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grad.addColorStop(0, 'rgba(15, 23, 42, 0.35)');
-    grad.addColorStop(0.5, 'rgba(15, 23, 42, 0.15)');
-    grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
-    sCtx.fillStyle = grad; sCtx.fillRect(0, 0, 128, 128);
-    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
-    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.set(0, 0.01, 0);
-    scene.add(shadowMesh);
-
-    // 3. Construct 3D Commercial Delivery Truck Model
-    const truckGroup = new THREE.Group();
-
-    // Materials
-    const cabMaterial = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.3 }); // StockManager Blue Cab
-    const boxMaterial = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4, metalness: 0.1 }); // Clean White Cargo Box
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, metalness: 0.5 }); // Dark Metal Frame
-    const tireMaterial = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }); // Dark Rubber Tires
-    const rimMaterial = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.8 }); // Chrome Rims
-    const glassMaterial = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65, roughness: 0.1 });
-    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-
-    // Chassis Frame Base
-    const chassisGeo = new THREE.BoxGeometry(4.4, 0.35, 1.7);
-    const chassisMesh = new THREE.Mesh(chassisGeo, frameMaterial);
-    chassisMesh.position.set(0, 0.45, 0);
-    truckGroup.add(chassisMesh);
-
-    // Driver Cab Box
-    const cabGeo = new THREE.BoxGeometry(1.4, 1.45, 1.65);
-    const cabMesh = new THREE.Mesh(cabGeo, cabMaterial);
-    cabMesh.position.set(-1.4, 1.35, 0);
-    truckGroup.add(cabMesh);
-
-    // Cab Sloped Nose
-    const noseGeo = new THREE.BoxGeometry(0.4, 0.8, 1.63);
-    const noseMesh = new THREE.Mesh(noseGeo, cabMaterial);
-    noseMesh.position.set(-2.2, 1.0, 0);
-    truckGroup.add(noseMesh);
-
-    // Windshield
-    const glassGeo = new THREE.BoxGeometry(0.65, 0.65, 1.55);
-    const glassMesh = new THREE.Mesh(glassGeo, glassMaterial);
-    glassMesh.position.set(-1.45, 1.55, 0);
-    truckGroup.add(glassMesh);
-
-    // Front Bumper
-    const bumperGeo = new THREE.BoxGeometry(0.2, 0.4, 1.68);
-    const bumperMesh = new THREE.Mesh(bumperGeo, frameMaterial);
-    bumperMesh.position.set(-2.42, 0.5, 0);
-    truckGroup.add(bumperMesh);
-
-    // Headlights (Left & Right)
-    const hlGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.1, 16);
-    const hlLeft = new THREE.Mesh(hlGeo, headlightMaterial);
-    hlLeft.rotation.z = Math.PI / 2;
-    hlLeft.position.set(-2.45, 0.58, 0.55);
-    truckGroup.add(hlLeft);
-
-    const hlRight = hlLeft.clone();
-    hlRight.position.set(-2.45, 0.58, -0.55);
-    truckGroup.add(hlRight);
-
-    // Cargo Box
-    const cargoGeo = new THREE.BoxGeometry(2.8, 1.85, 1.8);
-    const cargoMesh = new THREE.Mesh(cargoGeo, boxMaterial);
-    cargoMesh.position.set(0.75, 1.55, 0);
-    truckGroup.add(cargoMesh);
-
-    // Cargo Stripe Accent (StockManager Purple/Blue)
-    const stripeGeo = new THREE.BoxGeometry(2.82, 0.25, 1.82);
-    const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.3 });
-    const stripeMesh = new THREE.Mesh(stripeGeo, stripeMaterial);
-    stripeMesh.position.set(0.75, 1.55, 0);
-    truckGroup.add(stripeMesh);
-
-    // Wheels Construction Helper
-    function createWheel(x, z) {
-        const wheelGroup = new THREE.Group();
-        
-        const tireGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.32, 24);
-        const tireMesh = new THREE.Mesh(tireGeo, tireMaterial);
-        tireMesh.rotation.x = Math.PI / 2;
-        wheelGroup.add(tireMesh);
-
-        const rimGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.34, 16);
-        const rimMesh = new THREE.Mesh(rimGeo, rimMaterial);
-        rimMesh.rotation.x = Math.PI / 2;
-        wheelGroup.add(rimMesh);
-
-        wheelGroup.position.set(x, 0.38, z);
-        return wheelGroup;
-    }
-
-    // Add 6 Wheels (Front Axle + Rear Dual Axles)
-    truckGroup.add(createWheel(-1.5, 0.9));
-    truckGroup.add(createWheel(-1.5, -0.9));
-    truckGroup.add(createWheel(0.6, 0.9));
-    truckGroup.add(createWheel(0.6, -0.9));
-    truckGroup.add(createWheel(1.5, 0.9));
-    truckGroup.add(createWheel(1.5, -0.9));
-
-    scene.add(truckGroup);
-
-    // 4. Interactive Drag to Rotate Logic
-    let isDragging = false;
-    let previousMouseX = 0;
-
-    canvas.addEventListener('mousedown', function (e) {
-        isDragging = true;
-        previousMouseX = e.clientX;
-        canvas.style.cursor = 'grabbing';
-    });
-
-    canvas.addEventListener('mousemove', function (e) {
-        if (!isDragging) return;
-        const deltaX = e.clientX - previousMouseX;
-        truckGroup.rotation.y += deltaX * 0.015;
-        previousMouseX = e.clientX;
-    });
-
-    window.addEventListener('mouseup', function () {
-        isDragging = false;
-        canvas.style.cursor = 'grab';
-    });
-
-    // Touch Support for Mobile Drag
-    canvas.addEventListener('touchstart', function (e) {
-        if (e.touches.length === 1) {
-            isDragging = true;
-            previousMouseX = e.touches[0].clientX;
+    const viewer = new Vehicle3DViewer({
+        container: '#truck3d-container',
+        canvas: '#truck3d-canvas',
+        vehicleData: {
+            registration: "{{ $assignedVehicle ? $assignedVehicle->vehicle_number : '' }}",
+            type: "{{ $assignedVehicle ? $assignedVehicle->vehicle_type : '' }}",
+            manufacturer: "{{ $assignedVehicle ? $assignedVehicle->manufacturer : '' }}",
+            model: "{{ $assignedVehicle ? $assignedVehicle->model : '' }}",
+            code: "{{ $assignedVehicle ? $assignedVehicle->vehicle_code : '' }}",
         }
-    }, { passive: true });
-
-    canvas.addEventListener('touchmove', function (e) {
-        if (!isDragging || e.touches.length !== 1) return;
-        const deltaX = e.touches[0].clientX - previousMouseX;
-        truckGroup.rotation.y += deltaX * 0.02;
-        previousMouseX = e.touches[0].clientX;
-    }, { passive: true });
-
-    canvas.addEventListener('touchend', function () {
-        isDragging = false;
     });
 
-    // 5. Render Loop with Autorotation & Idle Engine Vibration Physics
-    let animTime = 0;
-    function animate() {
-        requestAnimationFrame(animate);
-        animTime += 0.03;
-        if (!isDragging) {
-            truckGroup.rotation.y += 0.005;
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function () {
+        if (viewer && typeof viewer.dispose === 'function') {
+            viewer.dispose();
         }
-        truckGroup.position.y = Math.sin(animTime * 2.2) * 0.02; // Realistic truck engine idle vibration
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    // 6. Responsive Resize Handling
-    window.addEventListener('resize', function () {
-        const w = container.clientWidth || 340;
-        const h = container.clientHeight || 210;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
     });
 });
 </script>
