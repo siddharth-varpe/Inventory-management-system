@@ -71,7 +71,8 @@ class DriverTerminalCore4Test extends TestCase
         $response->assertViewIs('driver-terminal.vehicle.index');
         $response->assertSee('Vehicle &amp; Status', false);
         $response->assertSee('My Vehicle');
-        $response->assertSee('truck-3d.png');
+        $response->assertSee('truck3d-canvas');
+        $response->assertSee('Full Vehicle Master Specifications');
         $response->assertSee('MH12AU2233');
         $response->assertSee('Vehicle Health');
         $response->assertSee('Live Status');
