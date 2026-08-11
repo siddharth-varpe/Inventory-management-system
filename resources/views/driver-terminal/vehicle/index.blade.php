@@ -5,7 +5,7 @@
 @section('content')
 <div class="vstack gap-4">
 
-    <!-- 1. HEADER BAR -->
+    <!-- 1. VEHICLE HEADER BAR -->
     <div class="d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
             <a href="{{ route('driver-terminal.index', ['driver_code' => strtolower($currentDriver->driver_code)]) }}" 
@@ -29,7 +29,7 @@
         </button>
     </div>
 
-    <!-- 2. MY VEHICLE SHOWCASE CARD WITH INTERACTIVE THREE.JS 3D MODEL -->
+    <!-- 2. CURRENT VEHICLE / ASSIGNMENT (SHOWCASE CARD WITH THREE.JS 3D MODEL) -->
     <div class="card bg-white border border-translucent rounded-4 p-4 shadow-sm">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-2">
@@ -138,99 +138,7 @@
         @endif
     </div>
 
-    @if($assignedVehicle)
-    <!-- 3. COMPLETE VEHICLE MASTER TECHNICAL SPECIFICATIONS -->
-    <div class="card bg-white border border-translucent rounded-4 p-4 shadow-sm">
-        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-translucent pb-3">
-            <div class="d-flex align-items-center gap-2">
-                <span class="fs-5">📋</span>
-                <span class="fw-black text-dark fs-6">Full Vehicle Master Specifications</span>
-            </div>
-            <span class="badge bg-light text-dark font-monospace border" style="font-size: 0.7rem;">Verified Master</span>
-        </div>
-
-        <div class="row g-3" style="font-size: 0.82rem;">
-            <!-- Reg & Code -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Registration Number</span>
-                <span class="font-monospace text-dark fw-bold">{{ $assignedVehicle->vehicle_number }}</span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Code</span>
-                <span class="font-monospace text-primary fw-bold">{{ $assignedVehicle->vehicle_code ?? 'VEH-000001' }}</span>
-            </div>
-
-            <!-- Type & Make -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Class</span>
-                <span class="text-dark fw-semibold">{{ $assignedVehicle->vehicle_type ?? 'Heavy Commercial Vehicle' }}</span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Manufacturer</span>
-                <span class="text-dark fw-semibold">{{ $assignedVehicle->manufacturer ?? 'Tata Motors' }}</span>
-            </div>
-
-            <!-- Model & Year -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Model</span>
-                <span class="text-dark fw-semibold">{{ $assignedVehicle->model ?? 'Prima 2830.K' }}</span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Manufacturing Year</span>
-                <span class="font-monospace text-dark fw-bold">{{ $assignedVehicle->manufacturing_year ?? '2022' }}</span>
-            </div>
-
-            <!-- Load & Volume Capacity -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Load Capacity</span>
-                <span class="text-dark fw-bold">{{ number_format($assignedVehicle->load_capacity_kg ?? 7500, 2) }} kg</span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Volume Capacity</span>
-                <span class="text-dark fw-bold">{{ number_format($assignedVehicle->volume_capacity_m3 ?? 22.5, 2) }} m³</span>
-            </div>
-
-            <!-- Odometer & Fuel -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Current Odometer</span>
-                <span class="font-monospace text-dark fw-bold">{{ number_format($assignedVehicle->current_odometer_km ?? 12000) }} km</span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fuel Type</span>
-                <span class="badge bg-light text-dark border font-monospace">{{ $assignedVehicle->fuel_type ?? 'Diesel' }}</span>
-            </div>
-
-            <!-- Health & Maintenance Status -->
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Maintenance Status</span>
-                <span class="badge bg-success-subtle text-success border border-success-subtle">
-                    ✓ {{ $assignedVehicle->maintenance_status ?? 'Good & Active' }}
-                </span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fitness Expiry Date</span>
-                <span class="text-dark font-monospace">
-                    {{ $assignedVehicle->fitness_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->fitness_expiry_date)->format('d M Y') : '08 Aug 2027' }}
-                </span>
-            </div>
-
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">PUC Expiry Date</span>
-                <span class="text-dark font-monospace">
-                    {{ $assignedVehicle->puc_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->puc_expiry_date)->format('d M Y') : '08 Feb 2027' }}
-                </span>
-            </div>
-            <div class="col-6">
-                <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Insurance Expiry Date</span>
-                <span class="text-dark font-monospace">
-                    {{ $assignedVehicle->insurance_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->insurance_expiry_date)->format('d M Y') : '08 Aug 2027' }}
-                </span>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    <!-- 4. VEHICLE HEALTH CARD -->
+    <!-- 3. VEHICLE HEALTH CARD -->
     <div class="card bg-white border border-translucent rounded-4 p-4 shadow-sm">
         <div class="d-flex align-items-center justify-content-between mb-1">
             <h6 class="fw-black text-dark mb-0 fs-6">Vehicle Health</h6>
@@ -291,7 +199,7 @@
         </div>
     </div>
 
-    <!-- 5. LIVE STATUS CARD (NON-GPS) -->
+    <!-- 4. LIVE STATUS CARD (NON-GPS) -->
     <div class="card bg-white border border-translucent rounded-4 p-4 shadow-sm">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h6 class="fw-black text-dark mb-0 fs-6">Live Status</h6>
@@ -351,7 +259,7 @@
         </div>
     </div>
 
-    <!-- 6. DOCUMENTS AND NEXT SERVICE ROW -->
+    <!-- 5. DOCUMENTS AND NEXT SERVICE ROW -->
     <div class="row g-3">
         <!-- DOCUMENTS CARD -->
         <div class="col-12 col-md-6">
@@ -468,7 +376,7 @@
         </div>
     </div>
 
-    <!-- 7. FOUR UTILITY ACTIONS GRID -->
+    <!-- 6. FOUR UTILITY ACTIONS GRID -->
     <div class="row row-cols-2 row-cols-md-4 g-3">
         <div class="col">
             <button type="button" class="card bg-white border border-translucent rounded-4 p-3.5 shadow-xs text-center w-100 h-100 btn text-start d-flex flex-column align-items-center justify-content-center"
@@ -502,6 +410,110 @@
             </button>
         </div>
     </div>
+
+    @if($assignedVehicle)
+    <!-- 7. FULL VEHICLE MASTER SPECIFICATIONS (FINAL EXPANDABLE SECTION AT VERY BOTTOM) -->
+    <div class="card bg-white border border-translucent rounded-4 shadow-sm overflow-hidden mt-2">
+        <button type="button" class="card-header bg-white border-0 p-4 d-flex align-items-center justify-content-between text-start w-100 text-decoration-none shadow-none" 
+                data-bs-toggle="collapse" data-bs-target="#fullMasterSpecsCollapse" aria-expanded="true" aria-controls="fullMasterSpecsCollapse"
+                style="cursor: pointer;">
+            <div class="d-flex align-items-center gap-2.5">
+                <span class="fs-5">📋</span>
+                <div>
+                    <h6 class="fw-black text-dark mb-0 fs-6">Full Vehicle Master Specifications</h6>
+                    <span class="text-muted micro-text d-block" style="font-size: 0.72rem;">Complete technical details &amp; master records</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark font-monospace border" style="font-size: 0.7rem;">Verified Master</span>
+                <span class="text-secondary fw-bold fs-6">▾</span>
+            </div>
+        </button>
+
+        <div class="collapse show" id="fullMasterSpecsCollapse">
+            <div class="card-body p-4 pt-0 border-top border-translucent">
+                <div class="row g-3 pt-3" style="font-size: 0.82rem;">
+                    <!-- Reg & Code -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Registration Number</span>
+                        <span class="font-monospace text-dark fw-bold">{{ $assignedVehicle->vehicle_number }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Code</span>
+                        <span class="font-monospace text-primary fw-bold">{{ $assignedVehicle->vehicle_code ?? 'VEH-000001' }}</span>
+                    </div>
+
+                    <!-- Type & Make -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Vehicle Class</span>
+                        <span class="text-dark fw-semibold">{{ $assignedVehicle->vehicle_type ?? 'Heavy Commercial Vehicle' }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Manufacturer</span>
+                        <span class="text-dark fw-semibold">{{ $assignedVehicle->manufacturer ?? 'Tata Motors' }}</span>
+                    </div>
+
+                    <!-- Model & Year -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Model</span>
+                        <span class="text-dark fw-semibold">{{ $assignedVehicle->model ?? 'Prima 2830.K' }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Manufacturing Year</span>
+                        <span class="font-monospace text-dark fw-bold">{{ $assignedVehicle->manufacturing_year ?? '2022' }}</span>
+                    </div>
+
+                    <!-- Load & Volume Capacity -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Load Capacity</span>
+                        <span class="text-dark fw-bold">{{ number_format($assignedVehicle->load_capacity_kg ?? 7500, 2) }} kg</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Volume Capacity</span>
+                        <span class="text-dark fw-bold">{{ number_format($assignedVehicle->volume_capacity_m3 ?? 22.5, 2) }} m³</span>
+                    </div>
+
+                    <!-- Odometer & Fuel -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Current Odometer</span>
+                        <span class="font-monospace text-dark fw-bold">{{ number_format($assignedVehicle->current_odometer_km ?? 12000) }} km</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fuel Type</span>
+                        <span class="badge bg-light text-dark border font-monospace">{{ $assignedVehicle->fuel_type ?? 'Diesel' }}</span>
+                    </div>
+
+                    <!-- Health & Maintenance Status -->
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Maintenance Status</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            ✓ {{ $assignedVehicle->maintenance_status ?? 'Good & Active' }}
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Fitness Expiry Date</span>
+                        <span class="text-dark font-monospace">
+                            {{ $assignedVehicle->fitness_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->fitness_expiry_date)->format('d M Y') : '08 Aug 2027' }}
+                        </span>
+                    </div>
+
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">PUC Expiry Date</span>
+                        <span class="text-dark font-monospace">
+                            {{ $assignedVehicle->puc_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->puc_expiry_date)->format('d M Y') : '08 Feb 2027' }}
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted micro-text d-block text-uppercase fw-semibold" style="font-size: 0.68rem;">Insurance Expiry Date</span>
+                        <span class="text-dark font-monospace">
+                            {{ $assignedVehicle->insurance_expiry_date ? \Carbon\Carbon::parse($assignedVehicle->insurance_expiry_date)->format('d M Y') : '08 Aug 2027' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
 </div>
 @endsection
